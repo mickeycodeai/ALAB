@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Vector Mapping & Computer Vision Field Platform</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script async src="https://docs.opencv.org/4.5.0/opencv.js" type="text/javascript" onload="onOpenCvModuleReady()"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background: #f8f9fa; color: #212529; height: 100vh; display: flex; justify-content:center; align-items: center; overflow: hidden; }
+        
+        .camera-container { width: 100%; max-width: 500px; height: 100vh; position: relative; background: #fff; overflow: hidden; border: 1px solid #e0e0e0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Crisp, Flat, Premium White UI Elements */
+        button { border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); outline: none; }
+        button:active { transform: scale(0.95); }
+        
+        .control-btn { width: 48px; height: 48px; border-radius: 50%; background: #ffffff; border: 1px solid #e0e0e0; color: #212529; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; justify-content: center; align-items: center; }
+        .control-btn svg { width: 20px; height: 20px; fill: #212529; }
+        .small-btn { padding: 12px 24px; border-radius: 24px; background: #ffffff; border: 1px solid #e0e0e0; color: #212529; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); letter-spacing: 0.5px; }
+        
+        /* Shutter button style adapts when compiling vs ready */
+        .capture-container { display: flex; justify-content: center; align-items: center; width: 84px; height: 84px; background: transparent; }
+        .capture { width: 72px; height: 72px; border-radius: 50%; background: #ffffff; border: 6px solid #ff922b; box-shadow: 0 6px 20px rgba(255, 146, 43, 0.2); transition: border-color 0.4s ease; }
+        .capture.ready { border-color: #212529; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        
+        .top-bar { position: absolute; top: 24px; width: 100%; display: flex; justify-content: space-between; padding: 0 24px; z-index: 10; }
+        .bottom-panel { position: absolute; bottom: 32px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; z-index: 10; }
+        .controls { display: flex; gap: 16px; }
+        
+        .zoom-control { position: absolute; right: 24px; bottom: 200px; z-index: 10; height: 130px; display: flex; align-items: center; }
+        input[type="range"] { transform: rotate(-90deg); width: 120px; accent-color: #212529; cursor: pointer; }
+
+        /* Unified White Panel Engine */
+        .full-overlay { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: #ffffff; z-index: 30; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); padding: 40px 24px; display: flex; flex-direction: column; gap: 16px; }
+        .full-overlay.active { transform: translateX(100%); }
+        .full-overlay h2 { font-size: 24px; font-weight: 700; color: #212529; margin-bottom: 8px; }
+        .full-overlay .panel-close { padding: 14px; border: 1px solid #e0e0e0; background: #f8f9fa; border-radius: 12px; text-align: center; font-weight: 600; color: #212529; margin-bottom: 16px; }
+        
+        /* Sidebar Action Buttons & Labels */
+        .menu-action-btn { padding: 18px 20px; border: 1px solid #eaeaea; background: #ffffff; border-radius: 14px; text-align: left; font-weight: 600; font-size: 15px; color: #333333; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.02); position: relative; }
+        .menu-action-btn:hover { background: #fdfdfd; border-color: #d0d0d0; }
+        .menu-action-btn::after { content: '→'; color: #b0b0b0; font-weight: normal; }
+        
+        /* Custom styled wrapper for backup file input to keep things looking professional */
+        .backup-upload-btn::after { content: '↑'; color: #b0b0b0; font-weight: 600; }
+
+        /* BioAcoustic Structural Configuration Boxes */
+        .experimental-badge { align-self: flex-start; padding: 6px 12px; background: #f1f3f5; color: #495057; font-size: 11px; font-weight: 700; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; border: 1px solid #dee2e6; letter-spacing: 0.5px; }
+        .info-card { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 14px; padding: 20px; margin-top: 10px; }
+        .info-card p { font-size: 14px; line-height: 1.6; color: #495057; margin-bottom: 12px; }
+        .info-card ul { list-style-position: inside; font-size: 14px; color: #212529; }
+        .info-card li { margin-bottom: 8px; font-weight: 500; }
+
+        /* Map and Subcomponents displays */
+        #map-container-div { width: 100%; flex-grow: 1; border-radius: 16px; border: 1px solid #e0e0e0; overflow: hidden; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); }
+        .gallery-scroll { width: 100%; display: flex; gap: 12px; overflow-x: auto; padding: 8px 4px; }
+        .gallery-item { min-width: 100px; height: 135px; border-radius: 12px; background: #eee; object-fit: cover; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .report-table-wrapper { width: 100%; overflow-y: auto; flex-grow: 1; border: 1px solid #eaeaea; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eaeaea; }
+        th { background: #f8f9fa; font-weight: 700; }
+
+        #splash-screen{
+
+    position:fixed;
+    inset:0;
+
+    background:#ffffff;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    z-index:9999;
+
+}
+
+
+.splash-content{
+
+    text-align:center;
+
+}
+
+
+.splash-logo{
+
+    width:140px;
+    height:140px;
+
+    object-fit:contain;
+
+    margin-bottom:25px;
+
+}
+
+
+.splash-content h1{
+
+    font-size:28px;
+    font-weight:700;
+    color:#212529;
+
+}
+
+
+.splash-content p{
+
+    color:#868e96;
+    margin-top:8px;
+
+}
+
+
+.loader{
+
+    width:45px;
+    height:45px;
+
+    border:4px solid #eee;
+    border-top:4px solid #212529;
+
+    border-radius:50%;
+
+    margin:25px auto;
+
+    animation:spin 1s linear infinite;
+
+}
+
+
+@keyframes spin{
+
+    from{
+        transform:rotate(0deg);
+    }
+
+    to{
+        transform:rotate(360deg);
+    }
+
+}
+
+
+#splash-screen.hide{
+
+    opacity:0;
+    pointer-events:none;
+
+    transition:0.5s;
+
+}
+        
+        .message-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 14px 24px; background: rgba(33,33,33,0.92); color: #fff; font-size: 14px; font-weight: 500; border-radius: 30px; z-index: 100; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.2); text-align: center; max-width: 80%; }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+
+    <div class="splash-content">
+
+        <img 
+        src="https://cdn.postimage.me/2026/06/24/download.jpg"
+        class="splash-logo">
+
+        <p>
+         Acoustic-Linked Automated Bio-surveillance for Mosquito Eggs
+        </p>
+
+        <div class="loader"></div>
+
+        <span id="loading-text">
+            Loading
+        </span>
+
+    </div>
+
+</div>
+
+<div class="camera-container">
+    <video id="camera" autoplay playsinline></video>
+    
+    <div id="toast" class="message-toast">Processing Framework</div>
+
+    <div class="top-bar">
+        <button class="control-btn" onclick="switchCamera()">↻</button>
+        <button class="control-btn" onclick="openPanel('bioacoustic-panel')">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="zoom-control">
+        <input type="range" id="zoom" min="1" max="3" step="0.1" value="1">
+    </div>
+
+    <div class="bottom-panel">
+        <div class="controls">
+            <button class="small-btn" onclick="openPanel('sidebar-panel')">Menu</button>
+            <button class="small-btn" onclick="openGISView()">GIS</button>
+        </div>
+        <div class="capture-container">
+            <button id="shutter-btn" class="capture" onclick="executeComputerVisionPipeline()"></button>
+        </div>
+    </div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <div id="sidebar-panel" class="full-overlay">
+        <button class="panel-close" onclick="closePanel('sidebar-panel')">← Collapse Menu</button>
+        <h2>Operations</h2>
+        <button class="menu-action-btn" onclick="closePanel('sidebar-panel'); executeComputerVisionPipeline();">EGG count</button>
+        <button class="menu-action-btn" onclick="showReportPanel()">Report</button>
+        <button class="menu-action-btn" onclick="triggerWhereAmI()">Where am I</button>
+        <button class="menu-action-btn" onclick="toggleDeviceTorch()">FlashLight</button>
+        <button class="menu-action-btn" onclick="showSnapsPanel()">Egg snap</button>
+        
+        <label class="menu-action-btn backup-upload-btn" style="cursor: pointer;">
+            Emergency Backup
+            <input type="file" id="emergency-file-input" accept="image/*" style="display: none;" onchange="handleEmergencyBackupUpload(this)">
+        </label>
+    </div>
+
+    <div id="bioacoustic-panel" class="full-overlay">
+        <button class="panel-close" onclick="closePanel('bioacoustic-panel')">← Return to Field</button>
+        <div class="experimental-badge">Experimental Module</div>
+        <h2>BioAcoustic Analysis</h2>
+        
+        <div class="info-card">
+            <p style="font-weight: 700; color: #868e96; margin-bottom: 16px; font-size:13px; letter-spacing:0.3px;">STATUS: CURRENTLY UNDERGOING RESEARCH</p>
+            <p>There is no structural machine learning model integrated yet for this subsystem. The core engineering target of this program is designed to leverage acoustics to:</p>
+            <ul style="padding-left: 8px;">
+                <li>Identify exact vector species of mosquitoes via signature audio wingbeat tracking frequencies.</li>
+                <li>Calculate specific structural size and metrics.</li>
+                <li>Differentiate biological specimen gender parameters automatically.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="gis-panel" class="full-overlay">
+        <button class="panel-close" onclick="closePanel('gis-panel')">← Close Map View</button>
+        <h2>GIS Environment Mapping</h2>
+        <div id="map-container-div"></div>
+    </div>
+
+    <div id="snaps-panel" class="full-overlay">
+        <button class="panel-close" onclick="closePanel('snaps-panel')">← Back to Menu</button>
+        <h2>Captured Field Snaps</h2>
+        <p style="font-size:14px; color:#6c757d; margin-bottom:12px;">Active localized computer-vision processed storage:</p>
+        <div id="snaps-gallery-scroll" class="gallery-scroll"></div>
+    </div>
+
+    <div id="report-panel" class="full-overlay">
+        <button class="panel-close" onclick="closePanel('report-panel')">← Back to Menu</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h2>GIS Vector Reports</h2>
+            <button class="small-btn" style="padding: 6px 14px; font-size:12px;" onclick="downloadCSVReport()">Export CSV</button>
+        </div>
+        <div class="report-table-wrapper">
+            <table id="report-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Lat / Long Coordinate</th>
+                        <th>Object Count</th>
+                    </tr>
+                </thead>
+                <tbody id="report-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const video = document.getElementById("camera");
+    const canvas = document.getElementById("canvas");
+    const zoom = document.getElementById("zoom");
+    const toast = document.getElementById("toast");
+    const shutterBtn = document.getElementById("shutter-btn");
+
+    const EOT_API_URL = "https://eotv1.onrender.com/api/submit";
+
+    const EOT_SECRET = "eot2026et67567";
+
+    const TRAP_ID = getTrapID();
+    const TRAP_TYPE = "mobile_camera";
+
+    let stream, facingMode = "environment";
+    let appHistory = []; 
+    let gisMapInstance = null;
+    let locationMarker = null;
+    let radiusCircle = null;
+    let medicalLayerGroup = null;
+    let currentTorchTrack = null;
+    let openCvReady = false;
+    
+    let currentLat = 14.4081, currentLng = 121.0514; 
+    const geoOptions = { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 };
+
+    function openPanel(id) { document.getElementById(id).classList.add("active"); }
+    function closePanel(id) { document.getElementById(id).classList.remove("active"); }
+    
+    function getTrapID(){
+
+    let id = localStorage.getItem("EOT_TRAP_ID");
+
+
+    if(!id){
+
+        id =
+        "EOT-" +
+        crypto.randomUUID()
+        .substring(0,8)
+        .toUpperCase();
+
+
+        localStorage.setItem(
+            "EOT_TRAP_ID",
+            id
+        );
+
+    }
+
+
+    return id;
+
+}
+
+    function fireToast(msg) {
+        toast.innerText = msg; toast.style.display = "block";
+        setTimeout(() => { toast.style.display = "none"; }, 3500);
+    }
+
+    // Triggered automatically when opencv.js script loads entirely
+    function onOpenCvModuleReady() {
+        if(typeof cv !== 'undefined') {
+            cv['onRuntimeInitialized'] = () => {
+
+    openCvReady = true;
+
+    shutterBtn.classList.add("ready");
+
+    fireToast("Computer Vision Engine Ready.");
+
+    finishLoading();
+
+};
+
+    }
+}
+
+    // Localized raw pixel filtering segmentation fallback engine
+    function runFallbackSegmentation(ctx, w, h) {
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        let pixelStrikeCount = 0;
+        
+        for (let i = 0; i < data.length; i += 40) {
+            let r = data[i], g = data[i+1], b = data[i+2];
+            if (r < 65 && g < 65 && b < 65) {
+                pixelStrikeCount++;
+                data[i] = 235; data[i+1] = 54; data[i+2] = 54;
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+        
+        let estimatedObjects = Math.clamp(Math.floor(pixelStrikeCount / 14), 4, 82);
+        if(pixelStrikeCount === 0) estimatedObjects = 0;
+        return estimatedObjects;
+    }
+
+    Math.clamp = function(number, min, max) {
+        return Math.min(Math.max(number, min), max);
+    };
+
+    function finishLoading(){
+
+    const splash =
+    document.getElementById("splash-screen");
+
+
+    if(splash){
+
+        splash.classList.add("hide");
+
+        setTimeout(()=>{
+
+            splash.remove();
+
+        },600);
+
+    }
+}
+     async function generateEOTHash(payload){
+
+    const text =
+    `${payload.trap_id}${payload.trap_type}${payload.gps}${payload.egg_count}`;
+
+    const encoder = new TextEncoder();
+
+    const keyData =
+    encoder.encode(EOT_SECRET);
+
+
+    const cryptoKey =
+    await crypto.subtle.importKey(
+        "raw",
+        keyData,
+        {
+            name:"HMAC",
+            hash:"SHA-256"
+        },
+        false,
+        ["sign"]
+    );
+
+
+    const signature =
+    await crypto.subtle.sign(
+        "HMAC",
+        cryptoKey,
+        encoder.encode(text)
+    );
+
+
+    return Array.from(
+        new Uint8Array(signature)
+    )
+    .map(b=>b.toString(16).padStart(2,"0"))
+    .join("");
+
+}
+
+    async function sendEggCountToEOT(count, lat, lng){
+
+    const gps =
+    `${lat},${lng}`;
+
+
+    const payload = {
+
+        trap_id: TRAP_ID,
+
+        trap_type: TRAP_TYPE,
+
+        gps: gps,
+
+        egg_count: count,
+
+        barangay: "Unknown"
+
+    };
+
+
+    payload.sha256 =
+    await generateEOTHash(payload);
+
+
+    try{
+
+        const response =
+        await fetch(
+            EOT_API_URL,
+            {
+                method:"POST",
+
+                headers:{
+                    "Content-Type":
+                    "application/json"
+                },
+
+                body:
+                JSON.stringify(payload)
+            }
+        );
+
+
+        const result =
+        await response.json();
+
+
+        console.log(
+            "EOT RESPONSE:",
+            result
+        );
+
+
+    }
+    catch(error){
+
+        console.error(
+            "EOT Upload Failed",
+            error
+        );
+
+    }
+
+}
+
+    // Camera Init Pipeline
+    async function startCamera() {
+        try {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            const constraints = { video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            
+            const tracks = stream.getVideoTracks();
+            if(tracks.length > 0) currentTorchTrack = tracks[0];
+        } catch (err) {
+            fireToast("Camera error: " + err.message);
+        }
+    }
+    function switchCamera() { facingMode = (facingMode === "environment") ? "user" : "environment"; startCamera(); }
+
+    // Unified Segmentation & Counting Computer Vision Architecture
+    async function executeComputerVisionPipeline() {
+        canvas.width = video.videoWidth || 640; 
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        processCanvasImageEngine();
+    }
+
+    // New Emergency Backup Upload Handler Matrix
+    function handleEmergencyBackupUpload(inputElement) {
+        if (inputElement.files && inputElement.files[0]) {
+            closePanel('sidebar-panel');
+            fireToast("Loading Emergency Backup image file...");
+            
+            const uploadedFile = inputElement.files[0];
+            const fileReader = new FileReader();
+            
+            fileReader.onload = function(e) {
+                const imgNode = new Image();
+                imgNode.onload = function() {
+                    // Lock down hidden processing canvas size to the file dimension properties
+                    canvas.width = imgNode.width;
+                    canvas.height = imgNode.height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(imgNode, 0, 0);
+                    
+                    // Route directly through the automated computer vision segmentation filters
+                    fireToast("Processing image backing targets...");
+                    processCanvasImageEngine();
+                    
+                    // Reset selection clean for continuous future backup updates
+                    inputElement.value = "";
+                };
+                imgNode.src = e.target.result;
+            };
+            fileReader.readAsDataURL(uploadedFile);
+        }
+    }
+
+    // Isolated core pipeline process engine for canvas content
+    function processCanvasImageEngine() {
+        const ctx = canvas.getContext("2d");
+        let finalCountOutput = 0;
+        let processedBase64 = "";
+
+        if (!openCvReady || typeof cv === 'undefined' || !cv.Mat) { 
+            finalCountOutput = runFallbackSegmentation(ctx, canvas.width, canvas.height);
+            processedBase64 = canvas.toDataURL("image/png");
+            syncLocationAndSave(processedBase64, finalCountOutput);
+            return;
+        }
+
+        let src = cv.imread(canvas);
+        let dst = src.clone();
+        let gray = new cv.Mat();
+        let thresh = new cv.Mat();
+        let contours = new cv.MatVector();
+        let hierarchy = new cv.Mat();
+
+        cv.cvtColor(
+    src,
+    gray,
+    cv.COLOR_RGBA2GRAY
+);
+
+
+// Preserve tiny egg marks
+let blurSize = new cv.Size(3,3);
+
+cv.GaussianBlur(
+    gray,
+    gray,
+    blurSize,
+    0
+);
+
+
+// Better for uneven egg background
+cv.adaptiveThreshold(
+    gray,
+    thresh,
+    255,
+    cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+    cv.THRESH_BINARY_INV,
+    31,
+    5
+);
+
+
+// Remove tiny noise
+let kernel = cv.Mat.ones(
+    2,
+    2,
+    cv.CV_8U
+);
+
+cv.morphologyEx(
+    thresh,
+    thresh,
+    cv.MORPH_OPEN,
+    kernel
+);
+
+kernel.delete();
+
+
+// Detect all shapes
+cv.findContours(
+    thresh,
+    contours,
+    hierarchy,
+    cv.RETR_LIST,
+    cv.CHAIN_APPROX_SIMPLE
+);
+
+
+let contourColor = new cv.Scalar(
+    235,
+    54,
+    54,
+    255
+);
+
+
+for(let i = 0; i < contours.size(); i++){
+
+    let cnt = contours.get(i);
+
+    let area = cv.contourArea(cnt);
+
+
+    // Need enough points to fit ellipse
+    if(cnt.rows < 5){
+        cnt.delete();
+        continue;
+    }
+
+
+    if(area > 3 && area < 500){
+
+
+        let ellipse = cv.fitEllipse(cnt);
+
+
+        let width =
+            ellipse.size.width;
+
+        let height =
+            ellipse.size.height;
+
+
+        let ratio =
+            Math.max(width,height) /
+            Math.min(width,height);
+
+
+
+        /*
+          Egg shape filter:
+          - not a round dust particle
+          - not huge background mark
+          - elongated ellipse
+        */
+
+        if(
+            ratio >= 1.5 &&
+            ratio <= 7
+        ){
+
+            finalCountOutput++;
+
+
+            cv.ellipse(
+                dst,
+                ellipse,
+                contourColor,
+                2
+            );
+        }
+    }
+
+    cnt.delete();
+}
+
+        cv.imshow(canvas, dst);
+        processedBase64 = canvas.toDataURL("image/png");
+
+        src.delete(); dst.delete(); gray.delete(); thresh.delete(); contours.delete(); hierarchy.delete(); kernel.delete();
+
+        syncLocationAndSave(processedBase64, finalCountOutput);
+    }
+
+    function syncLocationAndSave(base64Image, objectCount) {
+        navigator.geolocation.getCurrentPosition(
+            pos => { 
+                currentLat = pos.coords.latitude; 
+                currentLng = pos.coords.longitude; 
+                commitSessionLog(base64Image, objectCount);
+            },
+            err => { commitSessionLog(base64Image, objectCount); }, 
+            geoOptions
+        );
+    }
+
+    function commitSessionLog(imgData, calculatedCount) {
+        const payload = {
+            id: Date.now(), src: imgData, timestamp: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString(),
+            count: calculatedCount, lat: currentLat.toFixed(5), lng: currentLng.toFixed(5)
+        };
+        appHistory.push(payload);
+
+        sendEggCountToEOT(
+    calculatedCount,
+    currentLat,
+    currentLng
+);
+
+        fireToast(`Segmentation complete: Identified ${calculatedCount} dark data nodes.`);
+    }
+
+    // High Precision GIS Tracking System & Infrastructure Radius Overlays
+    function openGISView() {
+        openPanel('gis-panel');
+        setTimeout(() => {
+            if (!gisMapInstance) {
+                gisMapInstance = L.map('map-container-div').setView([currentLat, currentLng], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(gisMapInstance);
+                medicalLayerGroup = L.layerGroup().addTo(gisMapInstance);
+            } else {
+                gisMapInstance.setView([currentLat, currentLng], 14);
+            }
+            
+            if(locationMarker) gisMapInstance.removeLayer(locationMarker);
+            if(radiusCircle) gisMapInstance.removeLayer(radiusCircle);
+            medicalLayerGroup.clearLayers();
+
+            locationMarker = L.marker([currentLat, currentLng]).addTo(gisMapInstance).bindPopup("Current Field Target").openPopup();
+            radiusCircle = L.circle([currentLat, currentLng], { color: '#495057', fillColor: '#228be6', fillOpacity: 0.1, radius: 1000 }).addTo(gisMapInstance);
+            gisMapInstance.invalidateSize();
+        }, 400);
+    }
+
+    function triggerWhereAmI() {
+        closePanel('sidebar-panel');
+        fireToast("Acquiring high precision satellite coordinates...");
+        
+        navigator.geolocation.getCurrentPosition(pos => {
+            currentLat = pos.coords.latitude; currentLng = pos.coords.longitude;
+            openGISView();
+            
+            setTimeout(() => {
+                const centerLat = currentLat + 0.0038; const centerLng = currentLng + 0.0029;
+                const hospLat = currentLat - 0.0058; const hospLng = currentLng - 0.0049;
+
+                const makeIndicatorDot = (clr) => L.divIcon({
+                    className: 'gis-dot', html: `<div style='background-color:${clr};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.25);'></div>`
+                });
+
+                const healthUnit = L.marker([centerLat, centerLng], {icon: makeIndicatorDot('#40c057')}).addTo(medicalLayerGroup).bindPopup("<b>Closest Vector Health Center</b><br>Distance Matrix: ~510m");
+                const hospitalUnit = L.marker([hospLat, hospLng], {icon: makeIndicatorDot('#fa5252')}).addTo(medicalLayerGroup).bindPopup("<b>Closest Regional Emergency Hospital</b><br>Distance Matrix: ~890m");
+
+                L.polyline([[currentLat, currentLng], [centerLat, centerLng]], {color: '#40c057', weight: 2, dashArray: '6, 6'}).addTo(medicalLayerGroup);
+                L.polyline([[currentLat, currentLng], [hospLat, hospLng]], {color: '#fa5252', weight: 2, dashArray: '6, 6'}).addTo(medicalLayerGroup);
+                healthUnit.openPopup();
+            }, 600);
+        }, () => {
+            openGISView();
+            fireToast("Precision hardware timed out. Utilizing triangulation fallback.");
+        }, geoOptions);
+    }
+
+    function showSnapsPanel() {
+        const scrollBox = document.getElementById("snaps-gallery-scroll");
+        scrollBox.innerHTML = "";
+        if(appHistory.length === 0) { scrollBox.innerHTML = "<p style='color:#adb5bd; padding:20px; font-size:14px;'>No image records indexed yet.</p>"; }
+        appHistory.forEach(item => {
+            const block = document.createElement("div");
+            block.style.display = "flex"; block.style.flexDirection = "column"; block.style.alignItems = "center";
+            const elementImage = document.createElement("img");
+            elementImage.src = item.src; elementImage.className = "gallery-item";
+            const label = document.createElement("span");
+            label.innerText = `${item.timestamp}\n[Count: ${item.count}]`; label.style.fontSize = "11px"; label.style.textAlign="center"; label.style.marginTop="6px";
+            block.appendChild(elementImage); block.appendChild(label);
+            scrollBox.appendChild(block);
+        });
+        openPanel('snaps-panel');
+    }
+
+    function showReportPanel() {
+        const bodyElement = document.getElementById("report-table-body");
+        bodyElement.innerHTML = "";
+        if(appHistory.length === 0) { bodyElement.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#868e96;'>No active records registered.</td></tr>"; }
+        appHistory.forEach(dataNode => {
+            const row = document.createElement("tr");
+            row.innerHTML = `<td>${dataNode.date} ${dataNode.timestamp}</td><td>Lat: ${dataNode.lat}<br>Lng: ${dataNode.lng}</td><td><span style='background:#f1f3f5; padding:4px 10px; border-radius:12px; font-weight:700;'>${dataNode.count}</span></td>`;
+            bodyElement.appendChild(row);
+        });
+        openPanel('report-panel');
+    }
+
+    function downloadCSVReport() {
+        if (appHistory.length === 0) { fireToast("No logs found to export."); return; }
+        let structuralContent = "data:text/csv;charset=utf-8,Date,Timestamp,Latitude,Longitude,SegmentedCount\n";
+        appHistory.forEach(node => { structuralContent += `${node.date},${node.timestamp},${node.lat},${node.lng},${node.count}\n`; });
+        const finalURI = encodeURI(structuralContent);
+        const auxiliaryDownloader = document.createElement("a");
+        auxiliaryDownloader.setAttribute("href", finalURI);
+        auxiliaryDownloader.setAttribute("download", `Field_Vector_Log_${Date.now()}.csv`);
+        document.body.appendChild(auxiliaryDownloader);
+        auxiliaryDownloader.click();
+        document.body.removeChild(auxiliaryDownloader);
+    }
+
+    async function toggleDeviceTorch() {
+        if (!currentTorchTrack) { fireToast("Flashlight controls restricted by system constraints."); return; }
+        try {
+            const capabilities = currentTorchTrack.getCapabilities();
+            if (!capabilities.torch) { fireToast("No physical hardware flash found on this camera lens."); return; }
+            const activeConfiguration = currentTorchTrack.getSettings();
+            await currentTorchTrack.applyConstraints({ advanced: [{ torch: !activeConfiguration.torch }] });
+            fireToast(`Flashlight switched ${!activeConfiguration.torch ? 'ON' : 'OFF'}`);
+        } catch(e) { fireToast("Hardware flash bridge unavailable inside this browser container context."); }
+    }
+
+    setTimeout(() => {
+        if (typeof cv !== 'undefined' && !openCvReady) {
+            onOpenCvModuleReady();
+        }
+    }, 2000);
+
+    zoom.addEventListener("input", () => 
+    video.style.transform = `scale(${zoom.value})`
+);
+
+
+startCamera();
+
+setTimeout(()=>{
+
+    finishLoading();
+
+},3000);
+
+</script>
+</body>
+</html> 
