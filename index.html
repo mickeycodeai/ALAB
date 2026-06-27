@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Vector Mapping & Computer Vision Field Platform</title>
+    <title>ALAB</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -301,6 +301,92 @@
             font-size: 11px; font-weight: 600; color: #664d03;
             line-height: 1.4;
         }
+
+        /* ── Trap-not-verified error overlay ─────────────────────────────── */
+        #trap-error-overlay {
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 55; display: none;
+            flex-direction: column; justify-content: center;
+            align-items: center; gap: 12px;
+            text-align: center; padding: 32px;
+        }
+        #trap-error-overlay.active { display: flex; }
+        .trap-error-icon { font-size: 52px; line-height: 1; }
+        .trap-error-title { font-size: 17px; font-weight: 700; color: #c92a2a; }
+        .trap-error-sub   { font-size: 13px; color: #868e96; line-height: 1.6; max-width: 260px; }
+        .trap-error-retry {
+            margin-top: 8px; padding: 12px 28px;
+            background: #212529; color: #fff;
+            border: none; border-radius: 24px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+        }
+        .trap-error-retry:active { transform: scale(0.96); }
+
+        /* ── BioAcoustic panel internals ──────────────────────────────────── */
+        .bio-section-title {
+            font-size: 11px; font-weight: 700; color: #868e96;
+            text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px;
+        }
+        .bio-upload-zone {
+            border: 2px dashed #dee2e6; border-radius: 14px;
+            padding: 22px 16px; text-align: center; cursor: pointer;
+            background: #f8f9fa; transition: border-color 0.2s;
+        }
+        .bio-upload-zone:hover { border-color: #adb5bd; }
+        .bio-upload-zone .bio-up-icon { font-size: 30px; margin-bottom: 6px; }
+        .bio-upload-zone p     { font-size: 13px; color: #495057; font-weight: 600; margin-bottom: 2px; }
+        .bio-upload-zone small { font-size: 11px; color: #adb5bd; }
+        .bio-mic-btn {
+            width: 100%; padding: 14px; border-radius: 12px;
+            border: 1px solid #e0e0e0; background: #fff;
+            font-size: 14px; font-weight: 600; color: #212529;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .bio-mic-btn.recording {
+            background: #fff5f5; border-color: #ffc9c9; color: #c92a2a;
+            animation: micPulse 1.2s ease-in-out infinite;
+        }
+        @keyframes micPulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(201,42,42,0.2); }
+            50%      { box-shadow: 0 0 0 8px rgba(201,42,42,0); }
+        }
+        .bio-mic-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+        .bio-status-bar {
+            padding: 12px 16px; border-radius: 10px; background: #f1f3f5;
+            font-size: 13px; color: #495057; display: none; align-items: center; gap: 10px;
+        }
+        .bio-status-bar.active { display: flex; }
+        .bio-spinner-sm {
+            width: 16px; height: 16px; flex-shrink: 0;
+            border: 2px solid #dee2e6; border-top-color: #212529;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        .bio-result-card {
+            border: 1px solid #e0e0e0; border-radius: 14px;
+            padding: 18px; display: none; flex-direction: column; gap: 14px;
+        }
+        .bio-result-card.active { display: flex; }
+        .bio-result-row { display: flex; justify-content: space-between; align-items: center; }
+        .bio-result-label { font-size: 11px; color: #868e96; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+        .bio-result-value { font-size: 15px; font-weight: 700; color: #212529; }
+        .bio-conf-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+        .bio-conf-high { background: #d3f9d8; color: #2f9e44; }
+        .bio-conf-med  { background: #fff3bf; color: #e67700; }
+        .bio-conf-low  { background: #ffe3e3; color: #c92a2a; }
+        .bio-chart-wrap { margin-top: 4px; }
+        .bio-bar-row {
+            display: grid; grid-template-columns: 120px 1fr 46px;
+            align-items: center; gap: 8px; margin-bottom: 10px;
+        }
+        .bio-bar-label { font-size: 11px; color: #495057; font-weight: 600; line-height: 1.3; }
+        .bio-bar-track { height: 8px; background: #f1f3f5; border-radius: 4px; overflow: hidden; }
+        .bio-bar-fill  { height: 100%; border-radius: 4px; background: #212529; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
+        .bio-bar-pct   { font-size: 11px; color: #868e96; font-weight: 600; text-align: right; }
+        #bio-waveform  { width: 100%; height: 56px; border-radius: 8px; background: #f8f9fa; border: 1px solid #e0e0e0; display: none; }
+        #bio-waveform.active { display: block; }
+        .bio-divider { border: none; border-top: 1px solid #f1f3f5; margin: 2px 0; }
     </style>
 </head>
 <body>
@@ -412,6 +498,14 @@
         <small id="scan-status">Running detection pipeline</small>
     </div>
 
+    <!-- Trap-not-verified error overlay -->
+    <div id="trap-error-overlay">
+        <div class="trap-error-icon">🚫</div>
+        <p class="trap-error-title">Trap Not Recognized</p>
+        <p class="trap-error-sub">No valid ovitrap cross-marker (+) was detected in the frame. Please aim the camera at the verified trap surface and try again.</p>
+        <button class="trap-error-retry" onclick="dismissTrapError()">Try Again</button>
+    </div>
+
     <div id="sidebar-panel" class="full-overlay">
         <button class="panel-close" onclick="closePanel('sidebar-panel')">← Collapse Menu</button>
         <h2>Operations</h2>
@@ -428,18 +522,55 @@
     </div>
 
     <div id="bioacoustic-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('bioacoustic-panel')">← Return to Field</button>
-        <div class="experimental-badge">Experimental Module</div>
+        <button class="panel-close" onclick="closePanel('bioacoustic-panel'); stopMicRecording();">← Return to Field</button>
+        <div class="experimental-badge">OMTI ResNet-18 · Live Inference</div>
         <h2>BioAcoustic Analysis</h2>
-        
-        <div class="info-card">
-            <p style="font-weight: 700; color: #868e96; margin-bottom: 16px; font-size:13px; letter-spacing:0.3px;">STATUS: CURRENTLY UNDERGOING RESEARCH</p>
-            <p>There is no structural machine learning model integrated yet for this subsystem. The core engineering target of this program is designed to leverage acoustics to:</p>
-            <ul style="padding-left: 8px;">
-                <li>Identify exact vector species of mosquitoes via signature audio wingbeat tracking frequencies.</li>
-                <li>Calculate specific structural size and metrics.</li>
-                <li>Differentiate biological specimen gender parameters automatically.</li>
-            </ul>
+
+        <!-- Upload -->
+        <p class="bio-section-title">Upload Audio File</p>
+        <label class="bio-upload-zone" for="bio-file-input">
+            <div class="bio-up-icon">🎵</div>
+            <p>Tap to upload WAV or MP3</p>
+            <small>Wingbeat recording from field trap</small>
+        </label>
+        <input type="file" id="bio-file-input" accept=".wav,.mp3,audio/wav,audio/mpeg"
+               style="display:none;" onchange="handleBioUpload(this)">
+
+        <!-- Live Mic -->
+        <p class="bio-section-title">Live Microphone</p>
+        <button id="bio-mic-btn" class="bio-mic-btn" onclick="toggleMicRecording()">
+            <div class="bio-mic-dot"></div>
+            <span id="bio-mic-label">Start Recording</span>
+        </button>
+        <canvas id="bio-waveform"></canvas>
+
+        <!-- Status -->
+        <div id="bio-status" class="bio-status-bar">
+            <div class="bio-spinner-sm"></div>
+            <span id="bio-status-text">Sending to OMTI model…</span>
+        </div>
+
+        <!-- Results -->
+        <div id="bio-result-card" class="bio-result-card">
+            <div class="bio-result-row">
+                <span class="bio-result-label">Species</span>
+                <span class="bio-result-value" id="bio-res-species">—</span>
+            </div>
+            <hr class="bio-divider">
+            <div class="bio-result-row">
+                <span class="bio-result-label">Gender</span>
+                <span class="bio-result-value" id="bio-res-gender">—</span>
+            </div>
+            <hr class="bio-divider">
+            <div class="bio-result-row">
+                <span class="bio-result-label">Confidence</span>
+                <span id="bio-res-conf" class="bio-conf-pill bio-conf-high">—</span>
+            </div>
+            <hr class="bio-divider">
+
+            <!-- Probability breakdown chart -->
+            <p class="bio-section-title" style="margin-top:4px;">Class Probability Breakdown</p>
+            <div class="bio-chart-wrap" id="bio-chart"></div>
         </div>
     </div>
 
@@ -516,8 +647,10 @@
     const scanOverlay   = document.getElementById("scan-overlay");
     const scanStatusTxt = document.getElementById("scan-status");
 
-    const EOT_API_URL = "https://your-new-render-backend.onrender.com/api/submit";
+    const EOT_API_URL = "https://emergency-operations-team.onrender.com//api/submit";
     const EOT_SECRET  = "eot2026et67567";
+    const OMTI_API_URL = "https://rectal-affirmably-suanne.ngrok-free.dev/predict";
+    const OMTI_PROXY   = "https://corsproxy.io/?" + encodeURIComponent(OMTI_API_URL);
 
     const TRAP_ID   = getTrapID();
     const TRAP_TYPE = "mobile_camera";
@@ -530,7 +663,15 @@
     let medicalLayerGroup = null;
     let currentTorchTrack = null;
     let openCvReady = false;
-    let scanning    = false;   // scan-state guard — prevents concurrent scans
+    let scanning    = false;
+
+    // BioAcoustic mic recording state
+    let mediaRecorder  = null;
+    let audioChunks    = [];
+    let micStream      = null;
+    let waveformAnimId = null;
+    let audioCtx       = null;
+    let analyserNode   = null;
 
     let currentLat = 14.4081, currentLng = 121.0514;
     const geoOptions = { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 };
@@ -716,6 +857,232 @@
     }
     function switchCamera() { facingMode = (facingMode === "environment") ? "user" : "environment"; startCamera(); }
 
+    // ─── TRAP MARKER VERIFICATION ────────────────────────────────────────────
+    // Checks that the frame contains a cross/+ shaped marker before allowing scan.
+    // Uses Hough line detection: requires at least one near-horizontal AND one
+    // near-vertical line segment of significant length in the scene.
+    function verifyTrapMarker() {
+        if (!openCvReady || typeof cv === "undefined") return true; // skip if no CV
+
+        let src = null, gray = null, edges = null, lines = null;
+        try {
+            src   = cv.imread(canvas);
+            gray  = new cv.Mat();
+            edges = new cv.Mat();
+            lines = new cv.Mat();
+
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
+            cv.Canny(gray, edges, 50, 150);
+
+            // Probabilistic Hough — find line segments ≥ 40px long
+            cv.HoughLinesP(edges, lines, 1, Math.PI / 180, 40, 40, 10);
+
+            let hasH = false, hasV = false;
+            for (let i = 0; i < lines.rows; i++) {
+                const x1 = lines.data32S[i * 4];
+                const y1 = lines.data32S[i * 4 + 1];
+                const x2 = lines.data32S[i * 4 + 2];
+                const y2 = lines.data32S[i * 4 + 3];
+                const angle = Math.abs(Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI);
+                // Near-horizontal: angle ≤ 20° or ≥ 160°
+                if (angle <= 20 || angle >= 160) hasH = true;
+                // Near-vertical: 70° ≤ angle ≤ 110°
+                if (angle >= 70 && angle <= 110) hasV = true;
+                if (hasH && hasV) break;
+            }
+            return hasH && hasV;
+        } catch (e) {
+            return true; // fail open — don't block scan on CV error
+        } finally {
+            if (src)   src.delete();
+            if (gray)  gray.delete();
+            if (edges) edges.delete();
+            if (lines) lines.delete();
+        }
+    }
+
+    function dismissTrapError() {
+        document.getElementById("trap-error-overlay").classList.remove("active");
+        scanning = false;
+    }
+
+    // ─── BIOACOUSTIC — FILE UPLOAD ────────────────────────────────────────────
+    function handleBioUpload(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        input.value = "";
+        submitAudioToOMTI(file, file.name);
+    }
+
+    async function submitAudioToOMTI(blob, filename) {
+        setBioStatus(true, "Encoding audio…");
+        document.getElementById("bio-result-card").classList.remove("active");
+
+        // Convert blob to base64 — survives proxy forwarding unlike multipart
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload  = () => resolve(reader.result.split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+
+        setBioStatus(true, "Sending to OMTI model…");
+
+        try {
+            const res = await fetch(OMTI_PROXY, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ filename, audio_b64: base64 })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ detail: res.statusText }));
+                throw new Error(err.detail || `Server error ${res.status}`);
+            }
+            const data = await res.json();
+            renderBioResults(data);
+        } catch (e) {
+            setBioStatus(false);
+            fireToast("OMTI API Error: " + e.message);
+        }
+    }
+
+    function setBioStatus(active, text) {
+        const bar = document.getElementById("bio-status");
+        const txt = document.getElementById("bio-status-text");
+        if (active) { txt.textContent = text || "Processing…"; bar.classList.add("active"); }
+        else { bar.classList.remove("active"); }
+    }
+
+    function renderBioResults(data) {
+        setBioStatus(false);
+        const card = document.getElementById("bio-result-card");
+
+        document.getElementById("bio-res-species").textContent = data.species || "Unknown";
+        document.getElementById("bio-res-gender").textContent  = data.gender  || "Unknown";
+
+        const conf   = parseFloat(data.confidence) || 0;
+        const pill   = document.getElementById("bio-res-conf");
+        pill.textContent = conf.toFixed(1) + "%";
+        pill.className   = "bio-conf-pill " + (conf >= 70 ? "bio-conf-high" : conf >= 45 ? "bio-conf-med" : "bio-conf-low");
+
+        // Build bar chart from breakdown object
+        const chart = document.getElementById("bio-chart");
+        chart.innerHTML = "";
+        if (data.breakdown && typeof data.breakdown === "object") {
+            const entries = Object.entries(data.breakdown).sort((a, b) => b[1] - a[1]);
+            entries.forEach(([label, pct]) => {
+                const cleanLabel = label.replace(/_/g, " ");
+                const row = document.createElement("div");
+                row.className = "bio-bar-row";
+                row.innerHTML = `
+                    <span class="bio-bar-label">${cleanLabel}</span>
+                    <div class="bio-bar-track">
+                        <div class="bio-bar-fill" style="width:0%" data-target="${pct.toFixed(1)}"></div>
+                    </div>
+                    <span class="bio-bar-pct">${pct.toFixed(1)}%</span>`;
+                chart.appendChild(row);
+            });
+            // Animate bars after paint
+            requestAnimationFrame(() => {
+                chart.querySelectorAll(".bio-bar-fill").forEach(el => {
+                    el.style.width = el.dataset.target + "%";
+                });
+            });
+        }
+
+        card.classList.add("active");
+    }
+
+    // ─── BIOACOUSTIC — LIVE MIC ───────────────────────────────────────────────
+    async function toggleMicRecording() {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            stopMicRecording();
+        } else {
+            startMicRecording();
+        }
+    }
+
+    async function startMicRecording() {
+        try {
+            micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (e) {
+            fireToast("Microphone access denied."); return;
+        }
+
+        audioCtx     = new (window.AudioContext || window.webkitAudioContext)();
+        analyserNode = audioCtx.createAnalyser();
+        analyserNode.fftSize = 256;
+        const src = audioCtx.createMediaStreamSource(micStream);
+        src.connect(analyserNode);
+
+        audioChunks  = [];
+        const mimeType = MediaRecorder.isTypeSupported("audio/wav") ? "audio/wav" : "audio/webm";
+        mediaRecorder  = new MediaRecorder(micStream, { mimeType });
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: mimeType });
+            const ext  = mimeType.includes("wav") ? ".wav" : ".wav"; // always .wav name
+            submitAudioToOMTI(blob, "live_recording" + ext);
+            stopWaveform();
+        };
+        mediaRecorder.start();
+
+        // UI
+        const btn = document.getElementById("bio-mic-btn");
+        btn.classList.add("recording");
+        document.getElementById("bio-mic-label").textContent = "Stop & Analyze";
+        document.getElementById("bio-waveform").classList.add("active");
+        drawWaveform();
+    }
+
+    function stopMicRecording() {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+        }
+        if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+        if (audioCtx)  { audioCtx.close(); audioCtx = null; }
+
+        const btn = document.getElementById("bio-mic-btn");
+        btn.classList.remove("recording");
+        document.getElementById("bio-mic-label").textContent = "Start Recording";
+    }
+
+    function drawWaveform() {
+        const cv2 = document.getElementById("bio-waveform");
+        const ctx  = cv2.getContext("2d");
+        cv2.width  = cv2.offsetWidth || 300;
+        cv2.height = 56;
+
+        function frame() {
+            if (!analyserNode) return;
+            waveformAnimId = requestAnimationFrame(frame);
+            const buf  = new Uint8Array(analyserNode.frequencyBinCount);
+            analyserNode.getByteTimeDomainData(buf);
+            ctx.fillStyle = "#f8f9fa";
+            ctx.fillRect(0, 0, cv2.width, cv2.height);
+            ctx.lineWidth   = 2;
+            ctx.strokeStyle = "#212529";
+            ctx.beginPath();
+            const sliceW = cv2.width / buf.length;
+            let x = 0;
+            buf.forEach((v, i) => {
+                const y = (v / 128) * (cv2.height / 2);
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                x += sliceW;
+            });
+            ctx.stroke();
+        }
+        frame();
+    }
+
+    function stopWaveform() {
+        if (waveformAnimId) cancelAnimationFrame(waveformAnimId);
+        document.getElementById("bio-waveform").classList.remove("active");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     function showScanOverlay(statusText) {
         scanStatusTxt.innerText = statusText || "Running detection pipeline";
         scanOverlay.classList.add("active");
@@ -726,14 +1093,23 @@
 
     // Unified Segmentation & Counting Computer Vision Architecture
     async function executeComputerVisionPipeline() {
-        if (scanning) return;   // guard against concurrent scans
+        if (scanning) return;
         scanning = true;
-        showScanOverlay("Capturing frame…");
+        showScanOverlay("Verifying trap marker…");
 
+        // Capture the frame first so we can inspect it
         canvas.width  = video.videoWidth  || 640;
         canvas.height = video.videoHeight || 480;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // ── Trap marker check (+ cross shape must be present) ──
+        if (!verifyTrapMarker()) {
+            hideScanOverlay();
+            scanning = false;
+            document.getElementById("trap-error-overlay").classList.add("active");
+            return;
+        }
 
         scanStatusTxt.innerText = "Analyzing sample…";
         processCanvasImageEngine();
@@ -1155,4 +1531,4 @@ setTimeout(()=>{
 
 </script>
 </body>
-</html> 
+</html>
