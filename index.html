@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALAB</title>
+    <title>Advanced Vector Mapping & Computer Vision Field Platform</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -288,8 +288,7 @@
     const toast = document.getElementById("toast");
     const shutterBtn = document.getElementById("shutter-btn");
 
-    
-    const EOT_API_URL = "https://emergency-operations-team.onrender.com//api/submit";
+    const EOT_API_URL = "https://your-new-render-backend.onrender.com/api/submit";
 
     const EOT_SECRET = "eot2026et67567";
 
@@ -368,14 +367,14 @@
         
         for (let i = 0; i < data.length; i += 40) {
             let r = data[i], g = data[i+1], b = data[i+2];
-            if (r < 65 && g < 65 && b < 65) {
+           if (r < 45 && g < 45 && b < 45) {
                 pixelStrikeCount++;
                 data[i] = 235; data[i+1] = 54; data[i+2] = 54;
             }
         }
         ctx.putImageData(imgData, 0, 0);
         
-        let estimatedObjects = Math.clamp(Math.floor(pixelStrikeCount / 14), 4, 82);
+        let estimatedObjects = Math.clamp(Math.floor(pixelStrikeCount / 25), 4, 82);
         if(pixelStrikeCount === 0) estimatedObjects = 0;
         return estimatedObjects;
     }
@@ -610,15 +609,14 @@ cv.adaptiveThreshold(
     255,
     cv.ADAPTIVE_THRESH_GAUSSIAN_C,
     cv.THRESH_BINARY_INV,
-    31,
-    5
+    51,
+    9
 );
-
 
 // Remove tiny noise
 let kernel = cv.Mat.ones(
-    2,
-    2,
+    3,
+    3,
     cv.CV_8U
 );
 
@@ -664,17 +662,12 @@ for(let i = 0; i < contours.size(); i++){
     }
 
 
-    if(area > 3 && area < 500){
-
+    if(area > 20 && area < 300){
 
         let ellipse = cv.fitEllipse(cnt);
 
-
-        let width =
-            ellipse.size.width;
-
-        let height =
-            ellipse.size.height;
+        let width = ellipse.size.width;
+        let height = ellipse.size.height;
 
 
         let ratio =
@@ -682,21 +675,21 @@ for(let i = 0; i < contours.size(); i++){
             Math.min(width,height);
 
 
-
         /*
           Egg shape filter:
-          - not a round dust particle
-          - not huge background mark
-          - elongated ellipse
+          - remove round dust
+          - remove large background marks
+          - keep elongated objects
         */
 
         if(
-            ratio >= 1.5 &&
-            ratio <= 7
+            width > 5 &&
+            height > 2 &&
+            ratio >= 1.8 &&
+            ratio <= 5
         ){
 
             finalCountOutput++;
-
 
             cv.ellipse(
                 dst,
@@ -704,7 +697,9 @@ for(let i = 0; i < contours.size(); i++){
                 contourColor,
                 2
             );
+
         }
+
     }
 
     cnt.delete();
