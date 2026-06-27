@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
+    <!-- OpenCV.js still loaded but detection logic is commented out — Roboflow API is the primary engine -->
     <script async src="https://docs.opencv.org/4.5.0/opencv.js" type="text/javascript" onload="onOpenCvModuleReady()"></script>
 
     <style>
@@ -17,7 +18,6 @@
         .camera-container { width: 100%; max-width: 500px; height: 100vh; position: relative; background: #fff; overflow: hidden; border: 1px solid #e0e0e0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Crisp, Flat, Premium White UI Elements */
         button { border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); outline: none; }
         button:active { transform: scale(0.95); }
         
@@ -25,7 +25,6 @@
         .control-btn svg { width: 20px; height: 20px; fill: #212529; }
         .small-btn { padding: 12px 24px; border-radius: 24px; background: #ffffff; border: 1px solid #e0e0e0; color: #212529; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); letter-spacing: 0.5px; }
         
-        /* Shutter button style adapts when compiling vs ready */
         .capture-container { display: flex; justify-content: center; align-items: center; width: 84px; height: 84px; background: transparent; }
         .capture { width: 72px; height: 72px; border-radius: 50%; background: #ffffff; border: 6px solid #ff922b; box-shadow: 0 6px 20px rgba(255, 146, 43, 0.2); transition: border-color 0.4s ease; }
         .capture.ready { border-color: #212529; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
@@ -37,28 +36,23 @@
         .zoom-control { position: absolute; right: 24px; bottom: 200px; z-index: 10; height: 130px; display: flex; align-items: center; }
         input[type="range"] { transform: rotate(-90deg); width: 120px; accent-color: #212529; cursor: pointer; }
 
-        /* Unified White Panel Engine */
         .full-overlay { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: #ffffff; z-index: 30; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); padding: 40px 24px; display: flex; flex-direction: column; gap: 16px; }
         .full-overlay.active { transform: translateX(100%); }
         .full-overlay h2 { font-size: 24px; font-weight: 700; color: #212529; margin-bottom: 8px; }
         .full-overlay .panel-close { padding: 14px; border: 1px solid #e0e0e0; background: #f8f9fa; border-radius: 12px; text-align: center; font-weight: 600; color: #212529; margin-bottom: 16px; }
         
-        /* Sidebar Action Buttons & Labels */
         .menu-action-btn { padding: 18px 20px; border: 1px solid #eaeaea; background: #ffffff; border-radius: 14px; text-align: left; font-weight: 600; font-size: 15px; color: #333333; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.02); position: relative; }
         .menu-action-btn:hover { background: #fdfdfd; border-color: #d0d0d0; }
         .menu-action-btn::after { content: '→'; color: #b0b0b0; font-weight: normal; }
         
-        /* Custom styled wrapper for backup file input to keep things looking professional */
         .backup-upload-btn::after { content: '↑'; color: #b0b0b0; font-weight: 600; }
 
-        /* BioAcoustic Structural Configuration Boxes */
         .experimental-badge { align-self: flex-start; padding: 6px 12px; background: #f1f3f5; color: #495057; font-size: 11px; font-weight: 700; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; border: 1px solid #dee2e6; letter-spacing: 0.5px; }
         .info-card { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 14px; padding: 20px; margin-top: 10px; }
         .info-card p { font-size: 14px; line-height: 1.6; color: #495057; margin-bottom: 12px; }
         .info-card ul { list-style-position: inside; font-size: 14px; color: #212529; }
         .info-card li { margin-bottom: 8px; font-weight: 500; }
 
-        /* Map and Subcomponents displays */
         #map-container-div { width: 100%; flex-grow: 1; border-radius: 16px; border: 1px solid #e0e0e0; overflow: hidden; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); }
         .gallery-scroll { width: 100%; display: flex; gap: 12px; overflow-x: auto; padding: 8px 4px; }
         .gallery-item { min-width: 100px; height: 135px; border-radius: 12px; background: #eee; object-fit: cover; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -68,128 +62,47 @@
         th { background: #f8f9fa; font-weight: 700; }
 
         #splash-screen{
+            position:fixed;
+            inset:0;
+            background:#ffffff;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            z-index:9999;
+        }
+        .splash-content{ text-align:center; }
+        .splash-logo{ width:140px; height:140px; object-fit:contain; margin-bottom:25px; }
+        .splash-content h1{ font-size:28px; font-weight:700; color:#212529; }
+        .splash-content p{ color:#868e96; margin-top:8px; }
+        .loader{
+            width:45px; height:45px;
+            border:4px solid #eee;
+            border-top:4px solid #212529;
+            border-radius:50%;
+            margin:25px auto;
+            animation:spin 1s linear infinite;
+        }
+        @keyframes spin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+        #splash-screen.hide{ opacity:0; pointer-events:none; transition:0.5s; }
 
-    position:fixed;
-    inset:0;
-
-    background:#ffffff;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    z-index:9999;
-
-}
-
-
-.splash-content{
-
-    text-align:center;
-
-}
-
-
-.splash-logo{
-
-    width:140px;
-    height:140px;
-
-    object-fit:contain;
-
-    margin-bottom:25px;
-
-}
-
-
-.splash-content h1{
-
-    font-size:28px;
-    font-weight:700;
-    color:#212529;
-
-}
-
-
-.splash-content p{
-
-    color:#868e96;
-    margin-top:8px;
-
-}
-
-
-.loader{
-
-    width:45px;
-    height:45px;
-
-    border:4px solid #eee;
-    border-top:4px solid #212529;
-
-    border-radius:50%;
-
-    margin:25px auto;
-
-    animation:spin 1s linear infinite;
-
-}
-
-
-@keyframes spin{
-
-    from{
-        transform:rotate(0deg);
-    }
-
-    to{
-        transform:rotate(360deg);
-    }
-
-}
-
-
-#splash-screen.hide{
-
-    opacity:0;
-    pointer-events:none;
-
-    transition:0.5s;
-
-}
-
-/* Scan-analysis overlay — separate from app startup splash */
-#scan-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,0.88);
-    z-index: 50;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 14px;
-    backdrop-filter: blur(2px);
-}
-#scan-overlay.active { display: flex; }
-#scan-overlay .scan-spinner {
-    width: 40px; height: 40px;
-    border: 3px solid #eee;
-    border-top: 3px solid #212529;
-    border-radius: 50%;
-    animation: spin 0.9s linear infinite;
-}
-#scan-overlay p {
-    font-size: 14px; font-weight: 600; color: #212529;
-    letter-spacing: 0.3px;
-}
-#scan-overlay small {
-    font-size: 12px; color: #868e96;
-}
+        #scan-overlay {
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,0.88);
+            z-index: 50; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            gap: 14px; backdrop-filter: blur(2px);
+        }
+        #scan-overlay.active { display: flex; }
+        #scan-overlay .scan-spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #eee; border-top: 3px solid #212529;
+            border-radius: 50%; animation: spin 0.9s linear infinite;
+        }
+        #scan-overlay p { font-size: 14px; font-weight: 600; color: #212529; letter-spacing: 0.3px; }
+        #scan-overlay small { font-size: 12px; color: #868e96; }
         
         .message-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 14px 24px; background: rgba(33,33,33,0.92); color: #fff; font-size: 14px; font-weight: 500; border-radius: 30px; z-index: 100; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.2); text-align: center; max-width: 80%; }
 
-        /* ── Terms & Conditions Modal ───────────────────────────────────── */
         #tnc-modal {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.55);
@@ -199,58 +112,33 @@
         }
         #tnc-modal.hidden { display: none; }
         .tnc-sheet {
-            background: #ffffff;
-            width: 100%; max-width: 500px;
+            background: #ffffff; width: 100%; max-width: 500px;
             border-radius: 24px 24px 0 0;
-            padding: 28px 24px 36px;
-            max-height: 90vh;
-            display: flex; flex-direction: column;
-            gap: 0;
+            padding: 28px 24px 36px; max-height: 90vh;
+            display: flex; flex-direction: column; gap: 0;
             animation: sheetUp 0.35s cubic-bezier(0.4,0,0.2,1);
         }
-        @keyframes sheetUp {
-            from { transform: translateY(60px); opacity: 0; }
-            to   { transform: translateY(0);    opacity: 1; }
-        }
-        .tnc-handle {
-            width: 40px; height: 4px; background: #dee2e6;
-            border-radius: 2px; margin: 0 auto 20px;
-        }
-        .tnc-sheet h2 {
-            font-size: 18px; font-weight: 700; color: #212529;
-            margin-bottom: 4px;
-        }
-        .tnc-sheet .tnc-sub {
-            font-size: 12px; color: #868e96; margin-bottom: 16px;
-            letter-spacing: 0.2px;
-        }
+        @keyframes sheetUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .tnc-handle { width: 40px; height: 4px; background: #dee2e6; border-radius: 2px; margin: 0 auto 20px; }
+        .tnc-sheet h2 { font-size: 18px; font-weight: 700; color: #212529; margin-bottom: 4px; }
+        .tnc-sheet .tnc-sub { font-size: 12px; color: #868e96; margin-bottom: 16px; letter-spacing: 0.2px; }
         .tnc-body {
-            overflow-y: auto; flex: 1;
-            max-height: 38vh;
+            overflow-y: auto; flex: 1; max-height: 38vh;
             border: 1px solid #e0e0e0; border-radius: 12px;
             padding: 16px; font-size: 13px; line-height: 1.65;
             color: #495057; margin-bottom: 20px;
         }
-        .tnc-body h3 {
-            font-size: 12px; font-weight: 700; color: #212529;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            margin: 14px 0 6px;
-        }
+        .tnc-body h3 { font-size: 12px; font-weight: 700; color: #212529; text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 6px; }
         .tnc-body h3:first-child { margin-top: 0; }
-        .tnc-body p  { margin-bottom: 8px; }
+        .tnc-body p { margin-bottom: 8px; }
         .tnc-body .dpa-badge {
-            display: inline-block;
-            background: #e7f5ff; color: #1971c2;
-            font-size: 10px; font-weight: 700;
-            padding: 3px 8px; border-radius: 4px;
-            letter-spacing: 0.4px; margin-bottom: 10px;
+            display: inline-block; background: #e7f5ff; color: #1971c2;
+            font-size: 10px; font-weight: 700; padding: 3px 8px;
+            border-radius: 4px; letter-spacing: 0.4px; margin-bottom: 10px;
         }
-
-        /* prototype notice inside T&C */
         .tnc-proto-box {
             background: #fff9db; border: 1px solid #ffe066;
-            border-radius: 10px; padding: 12px 14px;
-            margin-bottom: 12px;
+            border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;
         }
         .tnc-proto-box strong {
             display: block; font-size: 11px; font-weight: 700;
@@ -258,34 +146,21 @@
             letter-spacing: 0.5px; margin-bottom: 4px;
         }
         .tnc-proto-box p { font-size: 12px; color: #664d03; margin: 0; }
-
-        /* Accept button + countdown */
         #tnc-accept-btn {
-            width: 100%; padding: 16px;
-            border-radius: 14px;
+            width: 100%; padding: 16px; border-radius: 14px;
             font-size: 15px; font-weight: 700;
             background: #212529; color: #ffffff;
-            border: none; cursor: not-allowed;
-            opacity: 0.4;
+            border: none; cursor: not-allowed; opacity: 0.4;
             transition: opacity 0.3s, background 0.3s;
         }
-        #tnc-accept-btn.ready {
-            opacity: 1; cursor: pointer;
-            background: #212529;
-        }
+        #tnc-accept-btn.ready { opacity: 1; cursor: pointer; background: #212529; }
         #tnc-accept-btn.ready:active { transform: scale(0.97); }
-        #tnc-countdown {
-            text-align: center; font-size: 12px; color: #868e96;
-            margin-top: 10px; min-height: 18px;
-        }
+        #tnc-countdown { text-align: center; font-size: 12px; color: #868e96; margin-top: 10px; min-height: 18px; }
 
-        /* ── Prototype ribbon (persistent, top of camera view) ────────── */
         #proto-ribbon {
             position: absolute; top: 0; left: 0; right: 0;
-            background: #fff3bf;
-            border-bottom: 1px solid #ffe066;
-            padding: 6px 14px;
-            display: flex; align-items: center; gap: 8px;
+            background: #fff3bf; border-bottom: 1px solid #ffe066;
+            padding: 6px 14px; display: flex; align-items: center; gap: 8px;
             z-index: 20;
         }
         #proto-ribbon .proto-dot {
@@ -293,16 +168,9 @@
             background: #f59f00; flex-shrink: 0;
             animation: protoPulse 1.8s ease-in-out infinite;
         }
-        @keyframes protoPulse {
-            0%,100% { opacity: 1; }
-            50%      { opacity: 0.3; }
-        }
-        #proto-ribbon span {
-            font-size: 11px; font-weight: 600; color: #664d03;
-            line-height: 1.4;
-        }
+        @keyframes protoPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+        #proto-ribbon span { font-size: 11px; font-weight: 600; color: #664d03; line-height: 1.4; }
 
-        /* ── Trap-not-verified error overlay ─────────────────────────────── */
         #trap-error-overlay {
             position: absolute; inset: 0;
             background: rgba(255,255,255,0.95);
@@ -314,7 +182,7 @@
         #trap-error-overlay.active { display: flex; }
         .trap-error-icon { font-size: 52px; line-height: 1; }
         .trap-error-title { font-size: 17px; font-weight: 700; color: #c92a2a; }
-        .trap-error-sub   { font-size: 13px; color: #868e96; line-height: 1.6; max-width: 260px; }
+        .trap-error-sub { font-size: 13px; color: #868e96; line-height: 1.6; max-width: 260px; }
         .trap-error-retry {
             margin-top: 8px; padding: 12px 28px;
             background: #212529; color: #fff;
@@ -323,11 +191,7 @@
         }
         .trap-error-retry:active { transform: scale(0.96); }
 
-        /* ── BioAcoustic panel internals ──────────────────────────────────── */
-        .bio-section-title {
-            font-size: 11px; font-weight: 700; color: #868e96;
-            text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px;
-        }
+        .bio-section-title { font-size: 11px; font-weight: 700; color: #868e96; text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px; }
         .bio-upload-zone {
             border: 2px dashed #dee2e6; border-radius: 14px;
             padding: 22px 16px; text-align: center; cursor: pointer;
@@ -335,7 +199,7 @@
         }
         .bio-upload-zone:hover { border-color: #adb5bd; }
         .bio-upload-zone .bio-up-icon { font-size: 30px; margin-bottom: 6px; }
-        .bio-upload-zone p     { font-size: 13px; color: #495057; font-weight: 600; margin-bottom: 2px; }
+        .bio-upload-zone p { font-size: 13px; color: #495057; font-weight: 600; margin-bottom: 2px; }
         .bio-upload-zone small { font-size: 11px; color: #adb5bd; }
         .bio-mic-btn {
             width: 100%; padding: 14px; border-radius: 12px;
@@ -348,92 +212,65 @@
             background: #fff5f5; border-color: #ffc9c9; color: #c92a2a;
             animation: micPulse 1.2s ease-in-out infinite;
         }
-        @keyframes micPulse {
-            0%,100% { box-shadow: 0 0 0 0 rgba(201,42,42,0.2); }
-            50%      { box-shadow: 0 0 0 8px rgba(201,42,42,0); }
-        }
+        @keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(201,42,42,0.2); } 50% { box-shadow: 0 0 0 8px rgba(201,42,42,0); } }
         .bio-mic-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
-        .bio-status-bar {
-            padding: 12px 16px; border-radius: 10px; background: #f1f3f5;
-            font-size: 13px; color: #495057; display: none; align-items: center; gap: 10px;
-        }
+        .bio-status-bar { padding: 12px 16px; border-radius: 10px; background: #f1f3f5; font-size: 13px; color: #495057; display: none; align-items: center; gap: 10px; }
         .bio-status-bar.active { display: flex; }
-        .bio-spinner-sm {
-            width: 16px; height: 16px; flex-shrink: 0;
-            border: 2px solid #dee2e6; border-top-color: #212529;
-            border-radius: 50%; animation: spin 0.8s linear infinite;
-        }
-        .bio-result-card {
-            border: 1px solid #e0e0e0; border-radius: 14px;
-            padding: 18px; display: none; flex-direction: column; gap: 14px;
-        }
+        .bio-spinner-sm { width: 16px; height: 16px; flex-shrink: 0; border: 2px solid #dee2e6; border-top-color: #212529; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .bio-result-card { border: 1px solid #e0e0e0; border-radius: 14px; padding: 18px; display: none; flex-direction: column; gap: 14px; }
         .bio-result-card.active { display: flex; }
         .bio-result-row { display: flex; justify-content: space-between; align-items: center; }
         .bio-result-label { font-size: 11px; color: #868e96; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
         .bio-result-value { font-size: 15px; font-weight: 700; color: #212529; }
         .bio-conf-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; }
         .bio-conf-high { background: #d3f9d8; color: #2f9e44; }
-        .bio-conf-med  { background: #fff3bf; color: #e67700; }
-        .bio-conf-low  { background: #ffe3e3; color: #c92a2a; }
+        .bio-conf-med { background: #fff3bf; color: #e67700; }
+        .bio-conf-low { background: #ffe3e3; color: #c92a2a; }
         .bio-chart-wrap { margin-top: 4px; }
-        .bio-bar-row {
-            display: grid; grid-template-columns: 120px 1fr 46px;
-            align-items: center; gap: 8px; margin-bottom: 10px;
-        }
+        .bio-bar-row { display: grid; grid-template-columns: 120px 1fr 46px; align-items: center; gap: 8px; margin-bottom: 10px; }
         .bio-bar-label { font-size: 11px; color: #495057; font-weight: 600; line-height: 1.3; }
         .bio-bar-track { height: 8px; background: #f1f3f5; border-radius: 4px; overflow: hidden; }
-        .bio-bar-fill  { height: 100%; border-radius: 4px; background: #212529; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
-        .bio-bar-pct   { font-size: 11px; color: #868e96; font-weight: 600; text-align: right; }
-        #bio-waveform  { width: 100%; height: 56px; border-radius: 8px; background: #f8f9fa; border: 1px solid #e0e0e0; display: none; }
+        .bio-bar-fill { height: 100%; border-radius: 4px; background: #212529; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
+        .bio-bar-pct { font-size: 11px; color: #868e96; font-weight: 600; text-align: right; }
+        #bio-waveform { width: 100%; height: 56px; border-radius: 8px; background: #f8f9fa; border: 1px solid #e0e0e0; display: none; }
         #bio-waveform.active { display: block; }
         .bio-divider { border: none; border-top: 1px solid #f1f3f5; margin: 2px 0; }
     </style>
 </head>
 <body>
 
-    <!-- ── Terms & Conditions Modal (shown before app starts) ──────────── -->
+    <!-- ── Terms & Conditions Modal ──────────── -->
     <div id="tnc-modal">
         <div class="tnc-sheet">
             <div class="tnc-handle"></div>
             <h2>Before You Continue</h2>
             <h2>ALAB System Update Released</h2>
 
-<p>
-Release Time: June 28, 2026 — 3:44 AM Philippine Standard Time (UTC+8)
-</p>
+            <p>Release Time: June 28, 2026 — 3:44 AM Philippine Standard Time (UTC+8)</p>
+            <p>This update introduces significant improvements to the ALAB mosquito egg surveillance platform, focusing on detection reliability, processing stability, and system resilience.</p>
 
-<p>
-This update introduces significant improvements to the ALAB mosquito egg surveillance platform, focusing on detection reliability, processing stability, and system resilience.
-</p>
+            <h3>Update Highlights</h3>
+            <ul>
+                <li>Improved computer vision sensitivity for mosquito egg structure detection.</li>
+                <li>Enhanced image processing parameters for variable field conditions.</li>
+                <li>Integrated automatic fallback detection when the primary engine is unavailable.</li>
+                <li>Fixed stability issues affecting scan execution and result processing.</li>
+                <li>Improved bounding box and object counting preparation for future AI integration.</li>
+                <li>Optimized system response time during image analysis.</li>
+                <li>Verified functionality of camera, GIS mapping, reporting, backup upload, and surveillance logging modules.</li>
+            </ul>
 
-<h3>Update Highlights</h3>
+            <h3>Current System Status</h3>
+            <p>All deployed modules are currently operational. The platform is now running with improved fault tolerance and enhanced detection workflow designed for field-based mosquito surveillance activities.</p>
 
-<ul>
-<li>Improved computer vision sensitivity for mosquito egg structure detection.</li>
-<li>Enhanced image processing parameters for variable field conditions.</li>
-<li>Integrated automatic fallback detection when the primary engine is unavailable.</li>
-<li>Fixed stability issues affecting scan execution and result processing.</li>
-<li>Improved bounding box and object counting preparation for future AI integration.</li>
-<li>Optimized system response time during image analysis.</li>
-<li>Verified functionality of camera, GIS mapping, reporting, backup upload, and surveillance logging modules.</li>
-</ul>
-
-<h3>Current System Status</h3>
-
-<p>
-All deployed modules are currently operational. The platform is now running with improved fault tolerance and enhanced detection workflow designed for field-based mosquito surveillance activities.
-</p>
             <p class="tnc-sub">Please read and accept the terms below to proceed.</p>
              
             <div class="tnc-body">
-
-                <!-- Prototype notice -->
                 <div class="tnc-proto-box">
                     <strong>⚠ Prototype Software — Not for Clinical Use</strong>
                     <p>This application is an <em>early-stage research prototype</em>. Detection accuracy may vary due to hardware limitations including camera resolution, lens quality, focal distance, lighting conditions, and device processing speed. Results should not be used as a sole basis for public health decisions.</p>
                 </div>
 
-                <!-- DPA alignment -->
                 <span class="dpa-badge">Republic Act No. 10173 — Data Privacy Act of 2012</span>
 
                 <h3>What We Collect</h3>
@@ -450,191 +287,164 @@ All deployed modules are currently operational. The platform is now running with
 
                 <h3>Consent</h3>
                 <p>By tapping "I Understand & Accept," you confirm that you have read this notice, understand the prototype limitations of this software, and voluntarily consent to the anonymous collection of GPS and count data as described above in accordance with RA 10173.</p>
-
             </div>
 
-            <button id="tnc-accept-btn" disabled onclick="acceptTerms()">
-                I Understand &amp; Accept
-            </button>
+            <button id="tnc-accept-btn" disabled onclick="acceptTerms()">I Understand &amp; Accept</button>
             <p id="tnc-countdown">Please wait <span id="tnc-timer">5</span> seconds…</p>
         </div>
     </div>
 
     <div id="splash-screen">
-
-    <div class="splash-content">
-
-        <img 
-        src="https://cdn.postimage.me/2026/06/24/download.jpg"
-        class="splash-logo">
-
-        <p>
-         Acoustic-Linked Automated Bio-surveillance for Mosquito Eggs
-        </p>
-
-        <div class="loader"></div>
-
-        <span id="loading-text">
-            Loading
-        </span>
-
-    </div>
-
-</div>
-
-<div class="camera-container">
-    <!-- Persistent prototype warning ribbon -->
-    <div id="proto-ribbon">
-        <div class="proto-dot"></div>
-        <span>PROTOTYPE — Results may vary with camera quality, lighting &amp; distance.</span>
-    </div>
-
-    <video id="camera" autoplay playsinline></video>
-    
-    <div id="toast" class="message-toast">Processing Framework</div>
-
-    <div class="top-bar">
-        <button class="control-btn" onclick="switchCamera()">↻</button>
-        <button class="control-btn" onclick="openPanel('bioacoustic-panel')">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
-            </svg>
-        </button>
-    </div>
-
-    <div class="zoom-control">
-        <input type="range" id="zoom" min="1" max="3" step="0.1" value="1">
-    </div>
-
-    <div class="bottom-panel">
-        <div class="controls">
-            <button class="small-btn" onclick="openPanel('sidebar-panel')">Menu</button>
-            <button class="small-btn" onclick="openGISView()">GIS</button>
-        </div>
-        <div class="capture-container">
-            <button id="shutter-btn" class="capture" onclick="executeComputerVisionPipeline()"></button>
+        <div class="splash-content">
+            <img src="https://cdn.postimage.me/2026/06/24/download.jpg" class="splash-logo">
+            <p>Acoustic-Linked Automated Bio-surveillance for Mosquito Eggs</p>
+            <div class="loader"></div>
+            <span id="loading-text">Loading</span>
         </div>
     </div>
 
-    <canvas id="canvas" style="display:none;"></canvas>
+    <div class="camera-container">
+        <div id="proto-ribbon">
+            <div class="proto-dot"></div>
+            <span>PROTOTYPE — Results may vary with camera quality, lighting &amp; distance.</span>
+        </div>
 
-    <!-- Scan-analysis overlay (fires per capture, not on startup) -->
-    <div id="scan-overlay">
-        <div class="scan-spinner"></div>
-        <p>Analyzing sample…</p>
-        <small id="scan-status">Running detection pipeline</small>
-    </div>
-
-    <!-- Trap-not-verified error overlay -->
-    <div id="trap-error-overlay">
-        <div class="trap-error-icon">🚫</div>
-        <p class="trap-error-title">Trap Not Recognized</p>
-        <p class="trap-error-sub">No valid ovitrap cross-marker (+) was detected in the frame. Please aim the camera at the verified trap surface and try again.</p>
-        <button class="trap-error-retry" onclick="dismissTrapError()">Try Again</button>
-    </div>
-
-    <div id="sidebar-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('sidebar-panel')">← Collapse Menu</button>
-        <h2>Operations</h2>
-        <button class="menu-action-btn" onclick="closePanel('sidebar-panel'); executeComputerVisionPipeline();">EGG count</button>
-        <button class="menu-action-btn" onclick="showReportPanel()">Report</button>
-        <button class="menu-action-btn" onclick="triggerWhereAmI()">Where am I</button>
-        <button class="menu-action-btn" onclick="toggleDeviceTorch()">FlashLight</button>
-        <button class="menu-action-btn" onclick="showSnapsPanel()">Egg snap</button>
+        <video id="camera" autoplay playsinline></video>
         
-        <label class="menu-action-btn backup-upload-btn" style="cursor: pointer;">
-            Emergency Backup
-            <input type="file" id="emergency-file-input" accept="image/*" style="display: none;" onchange="handleEmergencyBackupUpload(this)">
-        </label>
-    </div>
+        <div id="toast" class="message-toast">Processing Framework</div>
 
-    <div id="bioacoustic-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('bioacoustic-panel'); stopMicRecording();">← Return to Field</button>
-        <div class="experimental-badge">OMTI ResNet-18 · Live Inference</div>
-        <h2>BioAcoustic Analysis</h2>
-
-        <!-- Upload -->
-        <p class="bio-section-title">Upload Audio File</p>
-        <label class="bio-upload-zone" for="bio-file-input">
-            <div class="bio-up-icon">🎵</div>
-            <p>Tap to upload WAV or MP3</p>
-            <small>Wingbeat recording from field trap</small>
-        </label>
-        <input type="file" id="bio-file-input" accept=".wav,.mp3,audio/wav,audio/mpeg"
-               style="display:none;" onchange="handleBioUpload(this)">
-
-        <!-- Live Mic -->
-        <p class="bio-section-title">Live Microphone</p>
-        <button id="bio-mic-btn" class="bio-mic-btn" onclick="toggleMicRecording()">
-            <div class="bio-mic-dot"></div>
-            <span id="bio-mic-label">Start Recording</span>
-        </button>
-        <canvas id="bio-waveform"></canvas>
-
-        <!-- Status -->
-        <div id="bio-status" class="bio-status-bar">
-            <div class="bio-spinner-sm"></div>
-            <span id="bio-status-text">Sending to OMTI model…</span>
+        <div class="top-bar">
+            <button class="control-btn" onclick="switchCamera()">↻</button>
+            <button class="control-btn" onclick="openPanel('bioacoustic-panel')">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                </svg>
+            </button>
         </div>
 
-        <!-- Results -->
-        <div id="bio-result-card" class="bio-result-card">
-            <div class="bio-result-row">
-                <span class="bio-result-label">Species</span>
-                <span class="bio-result-value" id="bio-res-species">—</span>
+        <div class="zoom-control">
+            <input type="range" id="zoom" min="1" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="bottom-panel">
+            <div class="controls">
+                <button class="small-btn" onclick="openPanel('sidebar-panel')">Menu</button>
+                <button class="small-btn" onclick="openGISView()">GIS</button>
             </div>
-            <hr class="bio-divider">
-            <div class="bio-result-row">
-                <span class="bio-result-label">Gender</span>
-                <span class="bio-result-value" id="bio-res-gender">—</span>
+            <div class="capture-container">
+                <button id="shutter-btn" class="capture" onclick="executeComputerVisionPipeline()"></button>
             </div>
-            <hr class="bio-divider">
-            <div class="bio-result-row">
-                <span class="bio-result-label">Confidence</span>
-                <span id="bio-res-conf" class="bio-conf-pill bio-conf-high">—</span>
+        </div>
+
+        <canvas id="canvas" style="display:none;"></canvas>
+
+        <div id="scan-overlay">
+            <div class="scan-spinner"></div>
+            <p>Analyzing sample…</p>
+            <small id="scan-status">Running detection pipeline</small>
+        </div>
+
+        <div id="trap-error-overlay">
+            <div class="trap-error-icon">🚫</div>
+            <p class="trap-error-title">Trap Not Recognized</p>
+            <p class="trap-error-sub">No valid ovitrap cross-marker (+) was detected in the frame. Please aim the camera at the verified trap surface and try again.</p>
+            <button class="trap-error-retry" onclick="dismissTrapError()">Try Again</button>
+        </div>
+
+        <div id="sidebar-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('sidebar-panel')">← Collapse Menu</button>
+            <h2>Operations</h2>
+            <button class="menu-action-btn" onclick="closePanel('sidebar-panel'); executeComputerVisionPipeline();">EGG count</button>
+            <button class="menu-action-btn" onclick="showReportPanel()">Report</button>
+            <button class="menu-action-btn" onclick="triggerWhereAmI()">Where am I</button>
+            <button class="menu-action-btn" onclick="toggleDeviceTorch()">FlashLight</button>
+            <button class="menu-action-btn" onclick="showSnapsPanel()">Egg snap</button>
+            <label class="menu-action-btn backup-upload-btn" style="cursor: pointer;">
+                Emergency Backup
+                <input type="file" id="emergency-file-input" accept="image/*" style="display: none;" onchange="handleEmergencyBackupUpload(this)">
+            </label>
+        </div>
+
+        <div id="bioacoustic-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('bioacoustic-panel'); stopMicRecording();">← Return to Field</button>
+            <div class="experimental-badge">OMTI ResNet-18 · Live Inference</div>
+            <h2>BioAcoustic Analysis</h2>
+
+            <p class="bio-section-title">Upload Audio File</p>
+            <label class="bio-upload-zone" for="bio-file-input">
+                <div class="bio-up-icon">🎵</div>
+                <p>Tap to upload WAV or MP3</p>
+                <small>Wingbeat recording from field trap</small>
+            </label>
+            <input type="file" id="bio-file-input" accept=".wav,.mp3,audio/wav,audio/mpeg"
+                   style="display:none;" onchange="handleBioUpload(this)">
+
+            <p class="bio-section-title">Live Microphone</p>
+            <button id="bio-mic-btn" class="bio-mic-btn" onclick="toggleMicRecording()">
+                <div class="bio-mic-dot"></div>
+                <span id="bio-mic-label">Start Recording</span>
+            </button>
+            <canvas id="bio-waveform"></canvas>
+
+            <div id="bio-status" class="bio-status-bar">
+                <div class="bio-spinner-sm"></div>
+                <span id="bio-status-text">Sending to OMTI model…</span>
             </div>
-            <hr class="bio-divider">
 
-            <!-- Probability breakdown chart -->
-            <p class="bio-section-title" style="margin-top:4px;">Class Probability Breakdown</p>
-            <div class="bio-chart-wrap" id="bio-chart"></div>
+            <div id="bio-result-card" class="bio-result-card">
+                <div class="bio-result-row">
+                    <span class="bio-result-label">Species</span>
+                    <span class="bio-result-value" id="bio-res-species">—</span>
+                </div>
+                <hr class="bio-divider">
+                <div class="bio-result-row">
+                    <span class="bio-result-label">Gender</span>
+                    <span class="bio-result-value" id="bio-res-gender">—</span>
+                </div>
+                <hr class="bio-divider">
+                <div class="bio-result-row">
+                    <span class="bio-result-label">Confidence</span>
+                    <span id="bio-res-conf" class="bio-conf-pill bio-conf-high">—</span>
+                </div>
+                <hr class="bio-divider">
+                <p class="bio-section-title" style="margin-top:4px;">Class Probability Breakdown</p>
+                <div class="bio-chart-wrap" id="bio-chart"></div>
+            </div>
+        </div>
+
+        <div id="gis-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('gis-panel')">← Close Map View</button>
+            <h2>GIS Environment Mapping</h2>
+            <div id="map-container-div"></div>
+        </div>
+
+        <div id="snaps-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('snaps-panel')">← Back to Menu</button>
+            <h2>Captured Field Snaps</h2>
+            <p style="font-size:14px; color:#6c757d; margin-bottom:12px;">Active localized computer-vision processed storage:</p>
+            <div id="snaps-gallery-scroll" class="gallery-scroll"></div>
+        </div>
+
+        <div id="report-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('report-panel')">← Back to Menu</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h2>GIS Vector Reports</h2>
+                <button class="small-btn" style="padding: 6px 14px; font-size:12px;" onclick="downloadCSVReport()">Export CSV</button>
+            </div>
+            <div class="report-table-wrapper">
+                <table id="report-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Lat / Long Coordinate</th>
+                            <th>Object Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-table-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
-
-    <div id="gis-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('gis-panel')">← Close Map View</button>
-        <h2>GIS Environment Mapping</h2>
-        <div id="map-container-div"></div>
-    </div>
-
-    <div id="snaps-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('snaps-panel')">← Back to Menu</button>
-        <h2>Captured Field Snaps</h2>
-        <p style="font-size:14px; color:#6c757d; margin-bottom:12px;">Active localized computer-vision processed storage:</p>
-        <div id="snaps-gallery-scroll" class="gallery-scroll"></div>
-    </div>
-
-    <div id="report-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('report-panel')">← Back to Menu</button>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h2>GIS Vector Reports</h2>
-            <button class="small-btn" style="padding: 6px 14px; font-size:12px;" onclick="downloadCSVReport()">Export CSV</button>
-        </div>
-        <div class="report-table-wrapper">
-            <table id="report-table">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Lat / Long Coordinate</th>
-                        <th>Object Count</th>
-                    </tr>
-                </thead>
-                <tbody id="report-table-body"></tbody>
-            </table>
-        </div>
-    </div>
-
-</div>
 
 <script>
     // ── Terms & Conditions — 5-second countdown ──────────────────────────────
@@ -645,7 +455,6 @@ All deployed modules are currently operational. The platform is now running with
         const countdownP = document.getElementById("tnc-countdown");
 
         let secondsLeft = 5;
-
         const tick = setInterval(() => {
             secondsLeft--;
             timerSpan.textContent = secondsLeft;
@@ -677,15 +486,12 @@ All deployed modules are currently operational. The platform is now running with
     const EOT_API_URL = "https://emergency-operations-team.onrender.com/api/submit";
     const EOT_SECRET  = "eot2026et67567";
     const OMTI_API_URL = "https://rectal-affirmably-suanne.ngrok-free.dev/predict";
-    const OMTI_PROXY   = OMTI_API_URL;  // hosted on https — go direct, no proxy needed
+    const OMTI_PROXY   = OMTI_API_URL;
 
     const TRAP_ID   = getTrapID();
     const TRAP_TYPE = "mobile_camera";
-    const ROBOFLOW_API_URL =
-"https://serverless.roboflow.com/mikes-workspace-0c0c0/workflows/egg-tmga0";
-
-const ROBOFLOW_API_KEY =
-"ecyjfBXChZAgkrv1b1aP";
+    const ROBOFLOW_API_URL = "https://serverless.roboflow.com/mikes-workspace-0c0c0/workflows/egg-tmga0";
+    const ROBOFLOW_API_KEY = "ecyjfBXChZAgkrv1b1aP";
 
     let stream, facingMode = "environment";
     let appHistory = [];
@@ -697,7 +503,6 @@ const ROBOFLOW_API_KEY =
     let openCvReady = false;
     let scanning    = false;
 
-    // BioAcoustic mic recording state
     let mediaRecorder  = null;
     let audioChunks    = [];
     let micStream      = null;
@@ -726,24 +531,25 @@ const ROBOFLOW_API_KEY =
         setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
-    // Standalone clamp — never mutate Math
     function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
     }
 
-    // Triggered automatically when opencv.js script loads
     function onOpenCvModuleReady() {
         if (typeof cv !== 'undefined') {
             cv['onRuntimeInitialized'] = () => {
                 openCvReady = true;
                 shutterBtn.classList.add("ready");
-                fireToast("Computer Vision Engine Ready.");
+                fireToast("System Ready — Roboflow AI Engine Active.");
                 finishLoading();
             };
         }
     }
 
-    // Fallback pixel-counting path (no OpenCV available)
+    /* ═══════════════════════════════════════════════════════════════════════════
+       COMMENTED OUT: Rule-based OpenCV fallback segmentation
+       The system now relies exclusively on the Roboflow API for detection.
+       ═══════════════════════════════════════════════════════════════════════════
     function runFallbackSegmentation(ctx, w, h) {
         const imgData = ctx.getImageData(0, 0, w, h);
         const data    = imgData.data;
@@ -759,6 +565,7 @@ const ROBOFLOW_API_KEY =
         if (pixelStrikeCount === 0) estimated = 0;
         return estimated;
     }
+    ═══════════════════════════════════════════════════════════════════════════ */
 
     function finishLoading() {
         const splash = document.getElementById("splash-screen");
@@ -767,111 +574,38 @@ const ROBOFLOW_API_KEY =
             setTimeout(() => { splash.remove(); }, 600);
         }
     }
-     async function generateEOTHash(payload){
 
-    const text =
-    `${payload.trap_id}${payload.trap_type}${payload.gps}${payload.egg_count}`;
-
-    const encoder = new TextEncoder();
-
-    const keyData =
-    encoder.encode(EOT_SECRET);
-
-
-    const cryptoKey =
-    await crypto.subtle.importKey(
-        "raw",
-        keyData,
-        {
-            name:"HMAC",
-            hash:"SHA-256"
-        },
-        false,
-        ["sign"]
-    );
-
-
-    const signature =
-    await crypto.subtle.sign(
-        "HMAC",
-        cryptoKey,
-        encoder.encode(text)
-    );
-
-
-    return Array.from(
-        new Uint8Array(signature)
-    )
-    .map(b=>b.toString(16).padStart(2,"0"))
-    .join("");
-
-}
+    async function generateEOTHash(payload){
+        const text = `${payload.trap_id}${payload.trap_type}${payload.gps}${payload.egg_count}`;
+        const encoder = new TextEncoder();
+        const keyData = encoder.encode(EOT_SECRET);
+        const cryptoKey = await crypto.subtle.importKey(
+            "raw", keyData, { name:"HMAC", hash:"SHA-256" }, false, ["sign"]
+        );
+        const signature = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(text));
+        return Array.from(new Uint8Array(signature))
+            .map(b=>b.toString(16).padStart(2,"0")).join("");
+    }
 
     async function sendEggCountToEOT(count, lat, lng){
-
-    const gps =
-    `${lat},${lng}`;
-
-
-    const payload = {
-
-        trap_id: TRAP_ID,
-
-        trap_type: TRAP_TYPE,
-
-        gps: gps,
-
-        egg_count: count,
-
-        barangay: "Unknown"
-
-    };
-
-
-    payload.sha256 =
-    await generateEOTHash(payload);
-
-
-    try{
-
-        const response =
-        await fetch(
-            EOT_API_URL,
-            {
+        const gps = `${lat},${lng}`;
+        const payload = {
+            trap_id: TRAP_ID, trap_type: TRAP_TYPE,
+            gps: gps, egg_count: count, barangay: "Unknown"
+        };
+        payload.sha256 = await generateEOTHash(payload);
+        try {
+            const response = await fetch(EOT_API_URL, {
                 method:"POST",
-
-                headers:{
-                    "Content-Type":
-                    "application/json"
-                },
-
-                body:
-                JSON.stringify(payload)
-            }
-        );
-
-
-        const result =
-        await response.json();
-
-
-        console.log(
-            "EOT RESPONSE:",
-            result
-        );
-
-
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            console.log("EOT RESPONSE:", result);
+        } catch(error) {
+            console.error("EOT Upload Failed", error);
+        }
     }
-    catch(error){
-
-        console.error(
-            "EOT Upload Failed",
-            error
-        );
-
-    }
-
-}
 
     // Camera Init Pipeline
     async function startCamera() {
@@ -880,7 +614,6 @@ const ROBOFLOW_API_KEY =
             const constraints = { video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
             stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
-            
             const tracks = stream.getVideoTracks();
             if(tracks.length > 0) currentTorchTrack = tracks[0];
         } catch (err) {
@@ -889,27 +622,22 @@ const ROBOFLOW_API_KEY =
     }
     function switchCamera() { facingMode = (facingMode === "environment") ? "user" : "environment"; startCamera(); }
 
-    // ─── TRAP MARKER VERIFICATION ────────────────────────────────────────────
-    // Checks that the frame contains a cross/+ shaped marker before allowing scan.
-    // Uses Hough line detection: requires at least one near-horizontal AND one
-    // near-vertical line segment of significant length in the scene.
+    /* ═══════════════════════════════════════════════════════════════════════════
+       COMMENTED OUT: Rule-based OpenCV trap marker verification
+       The system now relies exclusively on the Roboflow API for detection.
+       ═══════════════════════════════════════════════════════════════════════════
     function verifyTrapMarker() {
-        if (!openCvReady || typeof cv === "undefined") return true; // skip if no CV
-
+        if (!openCvReady || typeof cv === "undefined") return true;
         let src = null, gray = null, edges = null, lines = null;
         try {
             src   = cv.imread(canvas);
             gray  = new cv.Mat();
             edges = new cv.Mat();
             lines = new cv.Mat();
-
             cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
             cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
             cv.Canny(gray, edges, 50, 150);
-
-            // Probabilistic Hough — find line segments ≥ 40px long
             cv.HoughLinesP(edges, lines, 1, Math.PI / 180, 40, 40, 10);
-
             let hasH = false, hasV = false;
             for (let i = 0; i < lines.rows; i++) {
                 const x1 = lines.data32S[i * 4];
@@ -917,22 +645,20 @@ const ROBOFLOW_API_KEY =
                 const x2 = lines.data32S[i * 4 + 2];
                 const y2 = lines.data32S[i * 4 + 3];
                 const angle = Math.abs(Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI);
-                // Near-horizontal: angle ≤ 20° or ≥ 160°
                 if (angle <= 20 || angle >= 160) hasH = true;
-                // Near-vertical: 70° ≤ angle ≤ 110°
                 if (angle >= 70 && angle <= 110) hasV = true;
                 if (hasH && hasV) break;
             }
             return hasH && hasV;
-        } catch (e) {
-            return true; // fail open — don't block scan on CV error
-        } finally {
+        } catch (e) { return true; }
+        finally {
             if (src)   src.delete();
             if (gray)  gray.delete();
             if (edges) edges.delete();
             if (lines) lines.delete();
         }
     }
+    ═══════════════════════════════════════════════════════════════════════════ */
 
     function dismissTrapError() {
         document.getElementById("trap-error-overlay").classList.remove("active");
@@ -951,7 +677,6 @@ const ROBOFLOW_API_KEY =
         setBioStatus(true, "Encoding audio…");
         document.getElementById("bio-result-card").classList.remove("active");
 
-        // Convert blob to base64 — survives proxy forwarding unlike multipart
         const base64 = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload  = () => resolve(reader.result.split(",")[1]);
@@ -989,7 +714,6 @@ const ROBOFLOW_API_KEY =
     function renderBioResults(data) {
         setBioStatus(false);
         const card = document.getElementById("bio-result-card");
-
         document.getElementById("bio-res-species").textContent = data.species || "Unknown";
         document.getElementById("bio-res-gender").textContent  = data.gender  || "Unknown";
 
@@ -998,7 +722,6 @@ const ROBOFLOW_API_KEY =
         pill.textContent = conf.toFixed(1) + "%";
         pill.className   = "bio-conf-pill " + (conf >= 70 ? "bio-conf-high" : conf >= 45 ? "bio-conf-med" : "bio-conf-low");
 
-        // Build bar chart from breakdown object
         const chart = document.getElementById("bio-chart");
         chart.innerHTML = "";
         if (data.breakdown && typeof data.breakdown === "object") {
@@ -1015,32 +738,24 @@ const ROBOFLOW_API_KEY =
                     <span class="bio-bar-pct">${pct.toFixed(1)}%</span>`;
                 chart.appendChild(row);
             });
-            // Animate bars after paint
             requestAnimationFrame(() => {
                 chart.querySelectorAll(".bio-bar-fill").forEach(el => {
                     el.style.width = el.dataset.target + "%";
                 });
             });
         }
-
         card.classList.add("active");
     }
 
     // ─── BIOACOUSTIC — LIVE MIC ───────────────────────────────────────────────
     async function toggleMicRecording() {
-        if (mediaRecorder && mediaRecorder.state === "recording") {
-            stopMicRecording();
-        } else {
-            startMicRecording();
-        }
+        if (mediaRecorder && mediaRecorder.state === "recording") stopMicRecording();
+        else startMicRecording();
     }
 
     async function startMicRecording() {
-        try {
-            micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (e) {
-            fireToast("Microphone access denied."); return;
-        }
+        try { micStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+        catch (e) { fireToast("Microphone access denied."); return; }
 
         audioCtx     = new (window.AudioContext || window.webkitAudioContext)();
         analyserNode = audioCtx.createAnalyser();
@@ -1054,13 +769,11 @@ const ROBOFLOW_API_KEY =
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         mediaRecorder.onstop = () => {
             const blob = new Blob(audioChunks, { type: mimeType });
-            const ext  = mimeType.includes("wav") ? ".wav" : ".wav"; // always .wav name
-            submitAudioToOMTI(blob, "live_recording" + ext);
+            submitAudioToOMTI(blob, "live_recording.wav");
             stopWaveform();
         };
         mediaRecorder.start();
 
-        // UI
         const btn = document.getElementById("bio-mic-btn");
         btn.classList.add("recording");
         document.getElementById("bio-mic-label").textContent = "Stop & Analyze";
@@ -1069,12 +782,9 @@ const ROBOFLOW_API_KEY =
     }
 
     function stopMicRecording() {
-        if (mediaRecorder && mediaRecorder.state === "recording") {
-            mediaRecorder.stop();
-        }
+        if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
         if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
         if (audioCtx)  { audioCtx.close(); audioCtx = null; }
-
         const btn = document.getElementById("bio-mic-btn");
         btn.classList.remove("recording");
         document.getElementById("bio-mic-label").textContent = "Start Recording";
@@ -1085,7 +795,6 @@ const ROBOFLOW_API_KEY =
         const ctx  = cv2.getContext("2d");
         cv2.width  = cv2.offsetWidth || 300;
         cv2.height = 56;
-
         function frame() {
             if (!analyserNode) return;
             waveformAnimId = requestAnimationFrame(frame);
@@ -1113,41 +822,28 @@ const ROBOFLOW_API_KEY =
         document.getElementById("bio-waveform").classList.remove("active");
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-
     function showScanOverlay(statusText) {
         scanStatusTxt.innerText = statusText || "Running detection pipeline";
         scanOverlay.classList.add("active");
     }
-    function hideScanOverlay() {
-        scanOverlay.classList.remove("active");
-    }
+    function hideScanOverlay() { scanOverlay.classList.remove("active"); }
 
-    // Unified Segmentation & Counting Computer Vision Architecture
+    // Unified Detection Pipeline — Roboflow API Only
     async function executeComputerVisionPipeline() {
         if (scanning) return;
         scanning = true;
-        showScanOverlay("Verifying trap marker…");
+        showScanOverlay("Capturing frame…");
 
-        // Capture the frame first so we can inspect it
         canvas.width  = video.videoWidth  || 640;
         canvas.height = video.videoHeight || 480;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // ── Trap marker check (+ cross shape must be present) ──
-        if (!verifyTrapMarker()) {
-            hideScanOverlay();
-            scanning = false;
-            document.getElementById("trap-error-overlay").classList.add("active");
-            return;
-        }
-
         scanStatusTxt.innerText = "Analyzing sample…";
-processHybridDetection();
+        processHybridDetection();
     }
 
-    // Emergency Backup Upload Handler
+    // Emergency Backup Upload Handler — now routes through Roboflow API
     function handleEmergencyBackupUpload(inputElement) {
         if (!inputElement.files || !inputElement.files[0]) return;
         if (scanning) { fireToast("A scan is already running. Please wait."); return; }
@@ -1164,7 +860,7 @@ processHybridDetection();
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(imgNode, 0, 0);
                 scanStatusTxt.innerText = "Analyzing sample…";
-                processCanvasImageEngine();
+                processHybridDetection();   // ← now uses Roboflow API
                 inputElement.value = "";
             };
             imgNode.src = e.target.result;
@@ -1172,217 +868,93 @@ processHybridDetection();
         fileReader.readAsDataURL(inputElement.files[0]);
     }
 
-
-    // ─── GRADED EGG SCORING PIPELINE ────────────────────────────────────────────
-    //
-    //  Scoring per contour (replaces binary pass/fail):
-    //    +2  area in realistic range  (4 – 2000 px²)
-    //    +1  has ≥5 contour points → ellipse can be fitted
-    //    +1  aspect ratio ≤ 10  (elongated but not a line)
-    //    +1  fill ratio > 0.15  (not a hollow ring artefact)
-    //    +1  mean brightness < 210  (not a specular highlight)
-    //  Count as egg if score ≥ 3
-    //
-    //  Key fixes vs previous version:
-    //    • No dark-center pixel check (eggs can be gray/bright inside)
-    //    • MORPH_CLOSE instead of OPEN (fills gaps, doesn't delete small objects)
-    //    • 2× wider area gate  (handles variable camera distance)
-    //    • Original image saved separately from detection overlay
-    //    • Bounding boxes stored for future annotation
-    //    • Confidence shown in result toast
-    //    • scanning flag released in finally block
-    // ────────────────────────────────────────────────────────────────────────────
+    // ─── ROBOFLOW API DETECTION (Primary & Only Engine) ──────────────────────
     async function runRoboflowDetection(imageBase64){
-
-    try{
-
-        const response = await fetch(
-            ROBOFLOW_API_URL,
-            {
+        try {
+            const response = await fetch(ROBOFLOW_API_URL, {
                 method:"POST",
-
-                headers:{
-                    "Content-Type":"application/json"
-                },
-
-                body:JSON.stringify({
-
-                    api_key:ROBOFLOW_API_KEY,
-
-                    inputs:{
-                        image:{
-                            type:"base64",
-                            value:imageBase64.split(",")[1]
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify({
+                    api_key: ROBOFLOW_API_KEY,
+                    inputs: {
+                        image: {
+                            type: "base64",
+                            value: imageBase64.split(",")[1]
                         }
                     }
-
                 })
-            }
-        );
-
-
-        if(!response.ok){
-            throw new Error(
-                "Roboflow error " + response.status
-            );
-        }
-
-
-        const result = await response.json();
-
-        console.log(
-            "Roboflow Result:",
-            result
-        );
-
-
-        return parseRoboflowResult(result);
-
-
-    }
-    catch(error){
-
-        console.error(
-            "Roboflow failed:",
-            error
-        );
-
-        return null;
-
-    }
-
-}
-
-
-
-function parseRoboflowResult(result){
-
-    try{
-
-        const predictions =
-        result.outputs[0].predictions;
-
-
-        if(!predictions){
+            });
+            if(!response.ok) throw new Error("Roboflow error " + response.status);
+            const result = await response.json();
+            console.log("Roboflow Result:", result);
+            return parseRoboflowResult(result);
+        } catch(error) {
+            console.error("Roboflow failed:", error);
             return null;
         }
-
-
-        return {
-
-            count: predictions.length,
-
-            boxes:
-            predictions.map(p=>({
-
-                x:p.x - p.width/2,
-                y:p.y - p.height/2,
-
-                width:p.width,
-                height:p.height,
-
-                confidence:p.confidence
-
-            })),
-
-            confidence:
-            Math.round(
-                (
-                predictions.reduce(
-                    (a,b)=>a+b.confidence,
-                    0
-                )
-                /
-                predictions.length
-                )
-                *100
-            )
-
-        };
-
-
-    }
-    catch(e){
-
-        console.error(
-            "Roboflow parser error",
-            e
-        );
-
-        return null;
-
     }
 
-}
+    function parseRoboflowResult(result){
+        try {
+            const predictions = result.outputs[0].predictions;
+            if(!predictions) return null;
+            return {
+                count: predictions.length,
+                boxes: predictions.map(p=>({
+                    x: p.x - p.width/2, y: p.y - p.height/2,
+                    width: p.width, height: p.height,
+                    confidence: p.confidence
+                })),
+                confidence: Math.round(
+                    (predictions.reduce((a,b)=>a+b.confidence, 0) / predictions.length) * 100
+                )
+            };
+        } catch(e) {
+            console.error("Roboflow parser error", e);
+            return null;
+        }
+    }
 
-async function processHybridDetection(){
+    // Main detection orchestrator — Roboflow API only (no OpenCV fallback)
+    async function processHybridDetection(){
+        const image = canvas.toDataURL("image/png");
+        scanStatusTxt.innerText = "Running Roboflow AI detector…";
 
-    const image =
-    canvas.toDataURL("image/png");
+        const result = await runRoboflowDetection(image);
 
+        if(result){
+            hideScanOverlay();
+            scanning = false;
+            syncLocationAndSave(
+                image, result.count,
+                { original: image, clahe: image, edges: image },
+                result.boxes, result.confidence, "Roboflow AI"
+            );
+            return;
+        }
 
-    scanStatusTxt.innerText =
-    "Running Roboflow AI detector…";
-
-
-    const result =
-    await runRoboflowDetection(image);
-
-
-
-    if(result){
+        /* ═══════════════════════════════════════════════════════════════════════
+           COMMENTED OUT: OpenCV fallback path
+           The system now relies exclusively on the Roboflow API for detection.
+           ═══════════════════════════════════════════════════════════════════════
+        console.log("Using OpenCV fallback");
+        scanStatusTxt.innerText = "AI unavailable. Running fallback…";
+        processCanvasImageEngine();
+        ═══════════════════════════════════════════════════════════════════════ */
 
         hideScanOverlay();
-
-        scanning=false;
-
-
-        syncLocationAndSave(
-
-            image,
-
-            result.count,
-
-            {
-                original:image,
-                clahe:image,
-                edges:image
-            },
-
-            result.boxes,
-
-            result.confidence,
-
-            "Roboflow AI"
-
-        );
-
-
-        return;
-
+        scanning = false;
+        fireToast("AI detection unavailable. Please check your connection.");
     }
 
-
-
-    console.log(
-        "Using OpenCV fallback"
-    );
-
-
-    scanStatusTxt.innerText =
-    "AI unavailable. Running fallback…";
-
-
-    processCanvasImageEngine();
-
-}
-    // Isolated core pipeline process engine for canvas content
+    /* ═══════════════════════════════════════════════════════════════════════════
+       COMMENTED OUT: Rule-based OpenCV image processing engine
+       The system now relies exclusively on the Roboflow API for detection.
+       ═══════════════════════════════════════════════════════════════════════════
     function processCanvasImageEngine() {
-
         const ctx = canvas.getContext("2d");
         const originalImage = canvas.toDataURL("image/png");
 
-        // ── No OpenCV: fall back to pixel-count heuristic ──
         if (!openCvReady || typeof cv === "undefined" || !cv.Mat) {
             const w = canvas.width, h = canvas.height;
             const fallbackCount = runFallbackSegmentation(ctx, w, h);
@@ -1407,37 +979,21 @@ async function processHybridDetection(){
             contours  = new cv.MatVector();
             hierarchy = new cv.Mat();
 
-            // Step 1 – Grayscale
             cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-
-            // Step 2 – CLAHE (contrast enhancement)
             const clahe = new cv.CLAHE(3.5, new cv.Size(8, 8));
             clahe.apply(gray, enhanced);
             clahe.delete();
-
-            // Step 3 – Gentle Gaussian blur (reduces noise without destroying small eggs)
             cv.GaussianBlur(enhanced, enhanced, new cv.Size(3, 3), 0);
-
-            // Step 4 – Canny edges (for intermediate view only)
             cv.Canny(enhanced, edges, 40, 120);
-
-            // Step 5 – Adaptive threshold
             cv.adaptiveThreshold(
                 enhanced, thresh, 255,
                 cv.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv.THRESH_BINARY_INV,
-                41, 7
+                cv.THRESH_BINARY_INV, 41, 7
             );
-
-            // Step 6 – Morphological CLOSE (fills internal gaps; does NOT remove small objects)
-            //          Previously used OPEN which deleted small objects the same size as eggs.
             kernel = cv.Mat.ones(3, 3, cv.CV_8U);
             cv.morphologyEx(thresh, thresh, cv.MORPH_CLOSE, kernel);
-
-            // Step 7 – Find external contours
             cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-            // ── Graded scoring loop ──────────────────────────────────────────────
             let finalCountOutput = 0;
             let totalScore = 0;
             let testedCount = 0;
@@ -1447,20 +1003,10 @@ async function processHybridDetection(){
             for (let i = 0; i < contours.size(); i++) {
                 const cnt = contours.get(i);
                 const area = cv.contourArea(cnt);
-
-                // Quick pre-filter: reject obviously impossible sizes
-                // Range is intentionally wide to handle variable camera distance
-                if (area < 4 || area > 2000) {
-                    cnt.delete();
-                    continue;
-                }
-
+                if (area < 4 || area > 2000) { cnt.delete(); continue; }
                 testedCount++;
                 let score = 0;
-
-                // +2 — area in realistic mosquito-egg range
                 score += 2;
-
                 let ellipseFitted = false;
                 let ratio = 1;
                 let contourFill = 0;
@@ -1475,31 +1021,18 @@ async function processHybridDetection(){
                     const ellipseArea = Math.PI * (w / 2) * (h / 2);
                     contourFill = ellipseArea > 0 ? area / ellipseArea : 0;
                     ellipseFitted = true;
-
-                    // Measure mean brightness inside contour
                     const mask = cv.Mat.zeros(enhanced.rows, enhanced.cols, cv.CV_8UC1);
                     cv.drawContours(mask, contours, i, new cv.Scalar(255), -1);
                     mean = cv.mean(enhanced, mask)[0];
                     mask.delete();
-
-                    // +1 — ellipse fitted and aspect ratio is egg-like (not a line)
                     if (ratio <= 10) score += 1;
-
-                    // +1 — fill ratio: contour fills a reasonable portion of its ellipse
-                    //      (rejects hollow rings and single-pixel artefacts)
                     if (contourFill > 0.15) score += 1;
-
-                    // +1 — mean brightness: not a pure specular highlight
-                    //      NOTE: dark-center check removed — egg interiors vary widely
                     if (mean < 210) score += 1;
                 }
 
-                // Score threshold: need ≥ 3 to count as an egg
                 if (score >= 3) {
                     finalCountOutput++;
                     totalScore += score;
-
-                    // Draw detection overlay on dst
                     const rect = cv.boundingRect(cnt);
                     if (ellipseResult) {
                         cv.ellipse(dst, ellipseResult, drawColor, 2);
@@ -1508,32 +1041,22 @@ async function processHybridDetection(){
                             new cv.Point(rect.x + rect.width, rect.y + rect.height),
                             drawColor, 2);
                     }
-
-                    // Store bounding box for later annotation
                     detectedBoxes.push({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
                 }
-
                 cnt.delete();
             }
 
-            // Confidence: average score of counted eggs as % of max (5 pts)
             const maxScore = 5;
             const avgScore = finalCountOutput > 0 ? totalScore / finalCountOutput : 0;
             const confidence = Math.round((avgScore / maxScore) * 100);
             const quality    = confidence >= 75 ? "Good" : confidence >= 50 ? "Fair" : "Low";
 
-            // ── Build output images ──────────────────────────────────────────────
-            // Detection overlay (dst written to canvas)
             cv.imshow(canvas, dst);
             const processedBase64 = canvas.toDataURL("image/png");
-
-            // CLAHE intermediate view
             const claheCanvas = document.createElement("canvas");
             claheCanvas.width  = enhanced.cols;
             claheCanvas.height = enhanced.rows;
             cv.imshow(claheCanvas, enhanced);
-
-            // Edge view
             const edgeCanvas = document.createElement("canvas");
             edgeCanvas.width  = edges.cols;
             edgeCanvas.height = edges.rows;
@@ -1541,20 +1064,12 @@ async function processHybridDetection(){
 
             hideScanOverlay();
             scanning = false;
-
             syncLocationAndSave(
-                processedBase64,
-                finalCountOutput,
-                {
-                    original: originalImage,
-                    clahe:    claheCanvas.toDataURL("image/png"),
-                    edges:    edgeCanvas.toDataURL("image/png")
-                },
-                detectedBoxes,
-                confidence,
-                quality
+                processedBase64, finalCountOutput,
+                { original: originalImage, clahe: claheCanvas.toDataURL("image/png"),
+                  edges: edgeCanvas.toDataURL("image/png") },
+                detectedBoxes, confidence, quality
             );
-
         } catch (error) {
             console.error("Vision Engine Error:", error);
             hideScanOverlay();
@@ -1564,7 +1079,6 @@ async function processHybridDetection(){
                 [], 0, "Error"
             );
         } finally {
-            // Clean up every allocated Mat
             if (src)       src.delete();
             if (dst)       dst.delete();
             if (gray)      gray.delete();
@@ -1576,52 +1090,45 @@ async function processHybridDetection(){
             if (kernel)    kernel.delete();
         }
     }
+    ═══════════════════════════════════════════════════════════════════════════ */
 
-function syncLocationAndSave(base64Image, objectCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
+    function syncLocationAndSave(base64Image, objectCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                currentLat = pos.coords.latitude;
+                currentLng = pos.coords.longitude;
+                commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
+            },
+            () => {
+                commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
+            },
+            geoOptions
+        );
+    }
 
-    navigator.geolocation.getCurrentPosition(
-        pos => {
-            currentLat = pos.coords.latitude;
-            currentLng = pos.coords.longitude;
-            commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
-        },
-        () => {
-            commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
-        },
-        geoOptions
-    );
+    function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
+        const payload = {
+            id:         Date.now(),
+            src:        imgData,
+            original:   extraImages.original || imgData,
+            clahe:      extraImages.clahe    || imgData,
+            edges:      extraImages.edges    || imgData,
+            detected:   imgData,
+            boxes:      boxes,
+            timestamp:  new Date().toLocaleTimeString(),
+            date:       new Date().toLocaleDateString(),
+            count:      calculatedCount,
+            confidence: confidence,
+            quality:    quality,
+            lat:        currentLat.toFixed(5),
+            lng:        currentLng.toFixed(5)
+        };
+        appHistory.push(payload);
+        sendEggCountToEOT(calculatedCount, currentLat, currentLng);
+        const confStr = confidence > 0 ? ` · Confidence: ${confidence}% (${quality})` : "";
+        fireToast(`Detection complete: ${calculatedCount} object${calculatedCount !== 1 ? "s" : ""} detected.${confStr}`);
+    }
 
-}
-
-
-function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
-
-    const payload = {
-        id:         Date.now(),
-        src:        imgData,
-        original:   extraImages.original || imgData,   // raw unmodified capture
-        clahe:      extraImages.clahe    || imgData,   // CLAHE enhanced view
-        edges:      extraImages.edges    || imgData,   // edge-detection view
-        detected:   imgData,                           // detection overlay
-        boxes:      boxes,                             // [{x,y,width,height}, …]
-        timestamp:  new Date().toLocaleTimeString(),
-        date:       new Date().toLocaleDateString(),
-        count:      calculatedCount,
-        confidence: confidence,
-        quality:    quality,
-        lat:        currentLat.toFixed(5),
-        lng:        currentLng.toFixed(5)
-    };
-
-    appHistory.push(payload);
-
-    sendEggCountToEOT(calculatedCount, currentLat, currentLng);
-
-    const confStr = confidence > 0 ? ` · Confidence: ${confidence}% (${quality})` : "";
-    fireToast(`Segmentation complete: ${calculatedCount} object${calculatedCount !== 1 ? "s" : ""} detected.${confStr}`);
-}
-
-    // High Precision GIS Tracking System & Infrastructure Radius Overlays
     function openGISView() {
         openPanel('gis-panel');
         setTimeout(() => {
@@ -1632,11 +1139,9 @@ function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = []
             } else {
                 gisMapInstance.setView([currentLat, currentLng], 14);
             }
-            
             if(locationMarker) gisMapInstance.removeLayer(locationMarker);
             if(radiusCircle) gisMapInstance.removeLayer(radiusCircle);
             medicalLayerGroup.clearLayers();
-
             locationMarker = L.marker([currentLat, currentLng]).addTo(gisMapInstance).bindPopup("Current Field Target").openPopup();
             radiusCircle = L.circle([currentLat, currentLng], { color: '#495057', fillColor: '#228be6', fillOpacity: 0.1, radius: 1000 }).addTo(gisMapInstance);
             gisMapInstance.invalidateSize();
@@ -1646,22 +1151,17 @@ function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = []
     function triggerWhereAmI() {
         closePanel('sidebar-panel');
         fireToast("Acquiring high precision satellite coordinates...");
-        
         navigator.geolocation.getCurrentPosition(pos => {
             currentLat = pos.coords.latitude; currentLng = pos.coords.longitude;
             openGISView();
-            
             setTimeout(() => {
                 const centerLat = currentLat + 0.0038; const centerLng = currentLng + 0.0029;
                 const hospLat = currentLat - 0.0058; const hospLng = currentLng - 0.0049;
-
                 const makeIndicatorDot = (clr) => L.divIcon({
                     className: 'gis-dot', html: `<div style='background-color:${clr};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.25);'></div>`
                 });
-
                 const healthUnit = L.marker([centerLat, centerLng], {icon: makeIndicatorDot('#40c057')}).addTo(medicalLayerGroup).bindPopup("<b>Closest Vector Health Center</b><br>Distance Matrix: ~510m");
                 const hospitalUnit = L.marker([hospLat, hospLng], {icon: makeIndicatorDot('#fa5252')}).addTo(medicalLayerGroup).bindPopup("<b>Closest Regional Emergency Hospital</b><br>Distance Matrix: ~890m");
-
                 L.polyline([[currentLat, currentLng], [centerLat, centerLng]], {color: '#40c057', weight: 2, dashArray: '6, 6'}).addTo(medicalLayerGroup);
                 L.polyline([[currentLat, currentLng], [hospLat, hospLng]], {color: '#fa5252', weight: 2, dashArray: '6, 6'}).addTo(medicalLayerGroup);
                 healthUnit.openPopup();
@@ -1726,24 +1226,16 @@ function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = []
     }
 
     setTimeout(() => {
-        if (typeof cv !== 'undefined' && !openCvReady) {
-            onOpenCvModuleReady();
-        }
+        if (typeof cv !== 'undefined' && !openCvReady) onOpenCvModuleReady();
     }, 2000);
 
     zoom.addEventListener("input", () => 
-    video.style.transform = `scale(${zoom.value})`
-);
+        video.style.transform = `scale(${zoom.value})`
+    );
 
+    startCamera();
 
-startCamera();
-
-setTimeout(()=>{
-
-    finishLoading();
-
-},3000);
-
+    setTimeout(() => { finishLoading(); }, 3000);
 </script>
 </body>
 </html>
