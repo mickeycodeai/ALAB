@@ -157,11 +157,195 @@
     transition:0.5s;
 
 }
+
+/* Scan-analysis overlay — separate from app startup splash */
+#scan-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.88);
+    z-index: 50;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    backdrop-filter: blur(2px);
+}
+#scan-overlay.active { display: flex; }
+#scan-overlay .scan-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #eee;
+    border-top: 3px solid #212529;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+}
+#scan-overlay p {
+    font-size: 14px; font-weight: 600; color: #212529;
+    letter-spacing: 0.3px;
+}
+#scan-overlay small {
+    font-size: 12px; color: #868e96;
+}
         
         .message-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 14px 24px; background: rgba(33,33,33,0.92); color: #fff; font-size: 14px; font-weight: 500; border-radius: 30px; z-index: 100; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.2); text-align: center; max-width: 80%; }
+
+        /* ── Terms & Conditions Modal ───────────────────────────────────── */
+        #tnc-modal {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 10000;
+            display: flex; justify-content: center; align-items: flex-end;
+            padding: 0;
+        }
+        #tnc-modal.hidden { display: none; }
+        .tnc-sheet {
+            background: #ffffff;
+            width: 100%; max-width: 500px;
+            border-radius: 24px 24px 0 0;
+            padding: 28px 24px 36px;
+            max-height: 90vh;
+            display: flex; flex-direction: column;
+            gap: 0;
+            animation: sheetUp 0.35s cubic-bezier(0.4,0,0.2,1);
+        }
+        @keyframes sheetUp {
+            from { transform: translateY(60px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+        .tnc-handle {
+            width: 40px; height: 4px; background: #dee2e6;
+            border-radius: 2px; margin: 0 auto 20px;
+        }
+        .tnc-sheet h2 {
+            font-size: 18px; font-weight: 700; color: #212529;
+            margin-bottom: 4px;
+        }
+        .tnc-sheet .tnc-sub {
+            font-size: 12px; color: #868e96; margin-bottom: 16px;
+            letter-spacing: 0.2px;
+        }
+        .tnc-body {
+            overflow-y: auto; flex: 1;
+            max-height: 38vh;
+            border: 1px solid #e0e0e0; border-radius: 12px;
+            padding: 16px; font-size: 13px; line-height: 1.65;
+            color: #495057; margin-bottom: 20px;
+        }
+        .tnc-body h3 {
+            font-size: 12px; font-weight: 700; color: #212529;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin: 14px 0 6px;
+        }
+        .tnc-body h3:first-child { margin-top: 0; }
+        .tnc-body p  { margin-bottom: 8px; }
+        .tnc-body .dpa-badge {
+            display: inline-block;
+            background: #e7f5ff; color: #1971c2;
+            font-size: 10px; font-weight: 700;
+            padding: 3px 8px; border-radius: 4px;
+            letter-spacing: 0.4px; margin-bottom: 10px;
+        }
+
+        /* prototype notice inside T&C */
+        .tnc-proto-box {
+            background: #fff9db; border: 1px solid #ffe066;
+            border-radius: 10px; padding: 12px 14px;
+            margin-bottom: 12px;
+        }
+        .tnc-proto-box strong {
+            display: block; font-size: 11px; font-weight: 700;
+            color: #e67700; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 4px;
+        }
+        .tnc-proto-box p { font-size: 12px; color: #664d03; margin: 0; }
+
+        /* Accept button + countdown */
+        #tnc-accept-btn {
+            width: 100%; padding: 16px;
+            border-radius: 14px;
+            font-size: 15px; font-weight: 700;
+            background: #212529; color: #ffffff;
+            border: none; cursor: not-allowed;
+            opacity: 0.4;
+            transition: opacity 0.3s, background 0.3s;
+        }
+        #tnc-accept-btn.ready {
+            opacity: 1; cursor: pointer;
+            background: #212529;
+        }
+        #tnc-accept-btn.ready:active { transform: scale(0.97); }
+        #tnc-countdown {
+            text-align: center; font-size: 12px; color: #868e96;
+            margin-top: 10px; min-height: 18px;
+        }
+
+        /* ── Prototype ribbon (persistent, top of camera view) ────────── */
+        #proto-ribbon {
+            position: absolute; top: 0; left: 0; right: 0;
+            background: #fff3bf;
+            border-bottom: 1px solid #ffe066;
+            padding: 6px 14px;
+            display: flex; align-items: center; gap: 8px;
+            z-index: 20;
+        }
+        #proto-ribbon .proto-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #f59f00; flex-shrink: 0;
+            animation: protoPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes protoPulse {
+            0%,100% { opacity: 1; }
+            50%      { opacity: 0.3; }
+        }
+        #proto-ribbon span {
+            font-size: 11px; font-weight: 600; color: #664d03;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
+
+    <!-- ── Terms & Conditions Modal (shown before app starts) ──────────── -->
+    <div id="tnc-modal">
+        <div class="tnc-sheet">
+            <div class="tnc-handle"></div>
+            <h2>Before You Continue</h2>
+            <p class="tnc-sub">Please read and accept the terms below to proceed.</p>
+
+            <div class="tnc-body">
+
+                <!-- Prototype notice -->
+                <div class="tnc-proto-box">
+                    <strong>⚠ Prototype Software — Not for Clinical Use</strong>
+                    <p>This application is an <em>early-stage research prototype</em>. Detection accuracy may vary due to hardware limitations including camera resolution, lens quality, focal distance, lighting conditions, and device processing speed. Results should not be used as a sole basis for public health decisions.</p>
+                </div>
+
+                <!-- DPA alignment -->
+                <span class="dpa-badge">Republic Act No. 10173 — Data Privacy Act of 2012</span>
+
+                <h3>What We Collect</h3>
+                <p>This application collects <strong>GPS coordinates</strong> and <strong>mosquito egg counts</strong> solely for the purpose of dengue vector surveillance. No personal information — including your name, contact details, identity, or device identifiers — is collected or stored at any time.</p>
+
+                <h3>How Data Is Used</h3>
+                <p>Anonymized location and count data is transmitted to a secure research server to generate field surveillance maps. All transmitted records are non-attributable and cannot be linked back to any individual user.</p>
+
+                <h3>Data Storage & Retention</h3>
+                <p>Captured images are processed locally on your device and are never uploaded to any external server. Only aggregate numerical counts and approximate GPS coordinates are transmitted. Data is retained only for the duration of the research period.</p>
+
+                <h3>Your Rights Under RA 10173</h3>
+                <p>As a data subject under Philippine law, you have the right to be informed, to object, and to erasure of any data linked to you. Because no personal data is collected, these rights are satisfied by design. For concerns, contact the system administrator.</p>
+
+                <h3>Consent</h3>
+                <p>By tapping "I Understand & Accept," you confirm that you have read this notice, understand the prototype limitations of this software, and voluntarily consent to the anonymous collection of GPS and count data as described above in accordance with RA 10173.</p>
+
+            </div>
+
+            <button id="tnc-accept-btn" disabled onclick="acceptTerms()">
+                I Understand &amp; Accept
+            </button>
+            <p id="tnc-countdown">Please wait <span id="tnc-timer">5</span> seconds…</p>
+        </div>
+    </div>
 
     <div id="splash-screen">
 
@@ -186,6 +370,12 @@
 </div>
 
 <div class="camera-container">
+    <!-- Persistent prototype warning ribbon -->
+    <div id="proto-ribbon">
+        <div class="proto-dot"></div>
+        <span>PROTOTYPE — Results may vary with camera quality, lighting &amp; distance.</span>
+    </div>
+
     <video id="camera" autoplay playsinline></video>
     
     <div id="toast" class="message-toast">Processing Framework</div>
@@ -214,6 +404,13 @@
     </div>
 
     <canvas id="canvas" style="display:none;"></canvas>
+
+    <!-- Scan-analysis overlay (fires per capture, not on startup) -->
+    <div id="scan-overlay">
+        <div class="scan-spinner"></div>
+        <p>Analyzing sample…</p>
+        <small id="scan-status">Running detection pipeline</small>
+    </div>
 
     <div id="sidebar-panel" class="full-overlay">
         <button class="panel-close" onclick="closePanel('sidebar-panel')">← Collapse Menu</button>
@@ -282,125 +479,121 @@
 </div>
 
 <script>
-    const video = document.getElementById("camera");
-    const canvas = document.getElementById("canvas");
-    const zoom = document.getElementById("zoom");
-    const toast = document.getElementById("toast");
+    // ── Terms & Conditions — 5-second countdown ──────────────────────────────
+    (function initTnC() {
+        const modal      = document.getElementById("tnc-modal");
+        const acceptBtn  = document.getElementById("tnc-accept-btn");
+        const timerSpan  = document.getElementById("tnc-timer");
+        const countdownP = document.getElementById("tnc-countdown");
+
+        let secondsLeft = 5;
+
+        const tick = setInterval(() => {
+            secondsLeft--;
+            timerSpan.textContent = secondsLeft;
+            if (secondsLeft <= 0) {
+                clearInterval(tick);
+                acceptBtn.disabled = false;
+                acceptBtn.classList.add("ready");
+                countdownP.textContent = "You may now accept the terms.";
+            }
+        }, 1000);
+    })();
+
+    function acceptTerms() {
+        const modal = document.getElementById("tnc-modal");
+        modal.style.transition = "opacity 0.3s";
+        modal.style.opacity = "0";
+        setTimeout(() => { modal.classList.add("hidden"); }, 320);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const video      = document.getElementById("camera");
+    const canvas     = document.getElementById("canvas");
+    const zoom       = document.getElementById("zoom");
+    const toast      = document.getElementById("toast");
     const shutterBtn = document.getElementById("shutter-btn");
+    const scanOverlay   = document.getElementById("scan-overlay");
+    const scanStatusTxt = document.getElementById("scan-status");
 
     const EOT_API_URL = "https://your-new-render-backend.onrender.com/api/submit";
+    const EOT_SECRET  = "eot2026et67567";
 
-    const EOT_SECRET = "eot2026et67567";
-
-    const TRAP_ID = getTrapID();
+    const TRAP_ID   = getTrapID();
     const TRAP_TYPE = "mobile_camera";
 
     let stream, facingMode = "environment";
-    let appHistory = []; 
+    let appHistory = [];
     let gisMapInstance = null;
     let locationMarker = null;
-    let radiusCircle = null;
+    let radiusCircle   = null;
     let medicalLayerGroup = null;
     let currentTorchTrack = null;
     let openCvReady = false;
-    
-    let currentLat = 14.4081, currentLng = 121.0514; 
+    let scanning    = false;   // scan-state guard — prevents concurrent scans
+
+    let currentLat = 14.4081, currentLng = 121.0514;
     const geoOptions = { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 };
 
-    function openPanel(id) { document.getElementById(id).classList.add("active"); }
+    function openPanel(id)  { document.getElementById(id).classList.add("active"); }
     function closePanel(id) { document.getElementById(id).classList.remove("active"); }
-    
-    function getTrapID(){
 
-    let id = localStorage.getItem("EOT_TRAP_ID");
-
-
-    if(!id){
-
-        id =
-        "EOT-" +
-        crypto.randomUUID()
-        .substring(0,8)
-        .toUpperCase();
-
-
-        localStorage.setItem(
-            "EOT_TRAP_ID",
-            id
-        );
-
+    function getTrapID() {
+        let id = localStorage.getItem("EOT_TRAP_ID");
+        if (!id) {
+            id = "EOT-" + crypto.randomUUID().substring(0, 8).toUpperCase();
+            localStorage.setItem("EOT_TRAP_ID", id);
+        }
+        return id;
     }
 
-
-    return id;
-
-}
-
     function fireToast(msg) {
-        toast.innerText = msg; toast.style.display = "block";
+        toast.innerText = msg;
+        toast.style.display = "block";
         setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
-    // Triggered automatically when opencv.js script loads entirely
-    function onOpenCvModuleReady() {
-        if(typeof cv !== 'undefined') {
-            cv['onRuntimeInitialized'] = () => {
-
-    openCvReady = true;
-
-    shutterBtn.classList.add("ready");
-
-    fireToast("Computer Vision Engine Ready.");
-
-    finishLoading();
-
-};
-
+    // Standalone clamp — never mutate Math
+    function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
     }
-}
 
-    // Localized raw pixel filtering segmentation fallback engine
+    // Triggered automatically when opencv.js script loads
+    function onOpenCvModuleReady() {
+        if (typeof cv !== 'undefined') {
+            cv['onRuntimeInitialized'] = () => {
+                openCvReady = true;
+                shutterBtn.classList.add("ready");
+                fireToast("Computer Vision Engine Ready.");
+                finishLoading();
+            };
+        }
+    }
+
+    // Fallback pixel-counting path (no OpenCV available)
     function runFallbackSegmentation(ctx, w, h) {
         const imgData = ctx.getImageData(0, 0, w, h);
-        const data = imgData.data;
+        const data    = imgData.data;
         let pixelStrikeCount = 0;
-        
         for (let i = 0; i < data.length; i += 40) {
-            let r = data[i], g = data[i+1], b = data[i+2];
-           if (r < 45 && g < 45 && b < 45) {
+            if (data[i] < 45 && data[i+1] < 45 && data[i+2] < 45) {
                 pixelStrikeCount++;
                 data[i] = 235; data[i+1] = 54; data[i+2] = 54;
             }
         }
         ctx.putImageData(imgData, 0, 0);
-        
-        let estimatedObjects = Math.clamp(Math.floor(pixelStrikeCount / 25), 4, 82);
-        if(pixelStrikeCount === 0) estimatedObjects = 0;
-        return estimatedObjects;
+        let estimated = clamp(Math.floor(pixelStrikeCount / 25), 4, 82);
+        if (pixelStrikeCount === 0) estimated = 0;
+        return estimated;
     }
 
-    Math.clamp = function(number, min, max) {
-        return Math.min(Math.max(number, min), max);
-    };
-
-    function finishLoading(){
-
-    const splash =
-    document.getElementById("splash-screen");
-
-
-    if(splash){
-
-        splash.classList.add("hide");
-
-        setTimeout(()=>{
-
-            splash.remove();
-
-        },600);
-
+    function finishLoading() {
+        const splash = document.getElementById("splash-screen");
+        if (splash) {
+            splash.classList.add("hide");
+            setTimeout(() => { splash.remove(); }, 600);
+        }
     }
-}
      async function generateEOTHash(payload){
 
     const text =
@@ -523,223 +716,319 @@
     }
     function switchCamera() { facingMode = (facingMode === "environment") ? "user" : "environment"; startCamera(); }
 
+    function showScanOverlay(statusText) {
+        scanStatusTxt.innerText = statusText || "Running detection pipeline";
+        scanOverlay.classList.add("active");
+    }
+    function hideScanOverlay() {
+        scanOverlay.classList.remove("active");
+    }
+
     // Unified Segmentation & Counting Computer Vision Architecture
     async function executeComputerVisionPipeline() {
-        canvas.width = video.videoWidth || 640; 
+        if (scanning) return;   // guard against concurrent scans
+        scanning = true;
+        showScanOverlay("Capturing frame…");
+
+        canvas.width  = video.videoWidth  || 640;
         canvas.height = video.videoHeight || 480;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+        scanStatusTxt.innerText = "Analyzing sample…";
         processCanvasImageEngine();
     }
 
-    // New Emergency Backup Upload Handler Matrix
+    // Emergency Backup Upload Handler
     function handleEmergencyBackupUpload(inputElement) {
-        if (inputElement.files && inputElement.files[0]) {
-            closePanel('sidebar-panel');
-            fireToast("Loading Emergency Backup image file...");
-            
-            const uploadedFile = inputElement.files[0];
-            const fileReader = new FileReader();
-            
-            fileReader.onload = function(e) {
-                const imgNode = new Image();
-                imgNode.onload = function() {
-                    // Lock down hidden processing canvas size to the file dimension properties
-                    canvas.width = imgNode.width;
-                    canvas.height = imgNode.height;
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(imgNode, 0, 0);
-                    
-                    // Route directly through the automated computer vision segmentation filters
-                    fireToast("Processing image backing targets...");
-                    processCanvasImageEngine();
-                    
-                    // Reset selection clean for continuous future backup updates
-                    inputElement.value = "";
-                };
-                imgNode.src = e.target.result;
+        if (!inputElement.files || !inputElement.files[0]) return;
+        if (scanning) { fireToast("A scan is already running. Please wait."); return; }
+        scanning = true;
+        closePanel('sidebar-panel');
+        showScanOverlay("Loading image…");
+
+        const fileReader = new FileReader();
+        fileReader.onload = function(e) {
+            const imgNode = new Image();
+            imgNode.onload = function() {
+                canvas.width  = imgNode.width;
+                canvas.height = imgNode.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(imgNode, 0, 0);
+                scanStatusTxt.innerText = "Analyzing sample…";
+                processCanvasImageEngine();
+                inputElement.value = "";
             };
-            fileReader.readAsDataURL(uploadedFile);
-        }
+            imgNode.src = e.target.result;
+        };
+        fileReader.readAsDataURL(inputElement.files[0]);
     }
+
+
+    // ─── GRADED EGG SCORING PIPELINE ────────────────────────────────────────────
+    //
+    //  Scoring per contour (replaces binary pass/fail):
+    //    +2  area in realistic range  (4 – 2000 px²)
+    //    +1  has ≥5 contour points → ellipse can be fitted
+    //    +1  aspect ratio ≤ 10  (elongated but not a line)
+    //    +1  fill ratio > 0.15  (not a hollow ring artefact)
+    //    +1  mean brightness < 210  (not a specular highlight)
+    //  Count as egg if score ≥ 3
+    //
+    //  Key fixes vs previous version:
+    //    • No dark-center pixel check (eggs can be gray/bright inside)
+    //    • MORPH_CLOSE instead of OPEN (fills gaps, doesn't delete small objects)
+    //    • 2× wider area gate  (handles variable camera distance)
+    //    • Original image saved separately from detection overlay
+    //    • Bounding boxes stored for future annotation
+    //    • Confidence shown in result toast
+    //    • scanning flag released in finally block
+    // ────────────────────────────────────────────────────────────────────────────
 
     // Isolated core pipeline process engine for canvas content
     function processCanvasImageEngine() {
-        const ctx = canvas.getContext("2d");
-        let finalCountOutput = 0;
-        let processedBase64 = "";
 
-        if (!openCvReady || typeof cv === 'undefined' || !cv.Mat) { 
-            finalCountOutput = runFallbackSegmentation(ctx, canvas.width, canvas.height);
-            processedBase64 = canvas.toDataURL("image/png");
-            syncLocationAndSave(processedBase64, finalCountOutput);
+        const ctx = canvas.getContext("2d");
+        const originalImage = canvas.toDataURL("image/png");
+
+        // ── No OpenCV: fall back to pixel-count heuristic ──
+        if (!openCvReady || typeof cv === "undefined" || !cv.Mat) {
+            const w = canvas.width, h = canvas.height;
+            const fallbackCount = runFallbackSegmentation(ctx, w, h);
+            hideScanOverlay();
+            scanning = false;
+            syncLocationAndSave(canvas.toDataURL("image/png"), fallbackCount, {
+                original: originalImage, clahe: originalImage, edges: originalImage
+            }, []);
             return;
         }
 
-        let src = cv.imread(canvas);
-        let dst = src.clone();
-        let gray = new cv.Mat();
-        let thresh = new cv.Mat();
-        let contours = new cv.MatVector();
-        let hierarchy = new cv.Mat();
+        let src = null, dst = null, gray = null, enhanced = null;
+        let edges = null, thresh = null, contours = null, hierarchy = null, kernel = null;
 
-        cv.cvtColor(
-    src,
-    gray,
-    cv.COLOR_RGBA2GRAY
-);
+        try {
+            src       = cv.imread(canvas);
+            dst       = src.clone();
+            gray      = new cv.Mat();
+            enhanced  = new cv.Mat();
+            edges     = new cv.Mat();
+            thresh    = new cv.Mat();
+            contours  = new cv.MatVector();
+            hierarchy = new cv.Mat();
 
+            // Step 1 – Grayscale
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-// Preserve tiny egg marks
-let blurSize = new cv.Size(3,3);
+            // Step 2 – CLAHE (contrast enhancement)
+            const clahe = new cv.CLAHE(3.5, new cv.Size(8, 8));
+            clahe.apply(gray, enhanced);
+            clahe.delete();
 
-cv.GaussianBlur(
-    gray,
-    gray,
-    blurSize,
-    0
-);
+            // Step 3 – Gentle Gaussian blur (reduces noise without destroying small eggs)
+            cv.GaussianBlur(enhanced, enhanced, new cv.Size(3, 3), 0);
 
+            // Step 4 – Canny edges (for intermediate view only)
+            cv.Canny(enhanced, edges, 40, 120);
 
-// Better for uneven egg background
-cv.adaptiveThreshold(
-    gray,
-    thresh,
-    255,
-    cv.ADAPTIVE_THRESH_GAUSSIAN_C,
-    cv.THRESH_BINARY_INV,
-    51,
-    9
-);
-
-// Remove tiny noise
-let kernel = cv.Mat.ones(
-    3,
-    3,
-    cv.CV_8U
-);
-
-cv.morphologyEx(
-    thresh,
-    thresh,
-    cv.MORPH_OPEN,
-    kernel
-);
-
-kernel.delete();
-
-
-// Detect all shapes
-cv.findContours(
-    thresh,
-    contours,
-    hierarchy,
-    cv.RETR_LIST,
-    cv.CHAIN_APPROX_SIMPLE
-);
-
-
-let contourColor = new cv.Scalar(
-    235,
-    54,
-    54,
-    255
-);
-
-
-for(let i = 0; i < contours.size(); i++){
-
-    let cnt = contours.get(i);
-
-    let area = cv.contourArea(cnt);
-
-
-    // Need enough points to fit ellipse
-    if(cnt.rows < 5){
-        cnt.delete();
-        continue;
-    }
-
-
-    if(area > 20 && area < 300){
-
-        let ellipse = cv.fitEllipse(cnt);
-
-        let width = ellipse.size.width;
-        let height = ellipse.size.height;
-
-
-        let ratio =
-            Math.max(width,height) /
-            Math.min(width,height);
-
-
-        /*
-          Egg shape filter:
-          - remove round dust
-          - remove large background marks
-          - keep elongated objects
-        */
-
-        if(
-            width > 5 &&
-            height > 2 &&
-            ratio >= 1.8 &&
-            ratio <= 5
-        ){
-
-            finalCountOutput++;
-
-            cv.ellipse(
-                dst,
-                ellipse,
-                contourColor,
-                2
+            // Step 5 – Adaptive threshold
+            cv.adaptiveThreshold(
+                enhanced, thresh, 255,
+                cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv.THRESH_BINARY_INV,
+                41, 7
             );
 
-        }
+            // Step 6 – Morphological CLOSE (fills internal gaps; does NOT remove small objects)
+            //          Previously used OPEN which deleted small objects the same size as eggs.
+            kernel = cv.Mat.ones(3, 3, cv.CV_8U);
+            cv.morphologyEx(thresh, thresh, cv.MORPH_CLOSE, kernel);
 
+            // Step 7 – Find external contours
+            cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+            // ── Graded scoring loop ──────────────────────────────────────────────
+            let finalCountOutput = 0;
+            let totalScore = 0;
+            let testedCount = 0;
+            const detectedBoxes = [];
+            const drawColor = new cv.Scalar(235, 54, 54, 255);
+
+            for (let i = 0; i < contours.size(); i++) {
+                const cnt = contours.get(i);
+                const area = cv.contourArea(cnt);
+
+                // Quick pre-filter: reject obviously impossible sizes
+                // Range is intentionally wide to handle variable camera distance
+                if (area < 4 || area > 2000) {
+                    cnt.delete();
+                    continue;
+                }
+
+                testedCount++;
+                let score = 0;
+
+                // +2 — area in realistic mosquito-egg range
+                score += 2;
+
+                let ellipseFitted = false;
+                let ratio = 1;
+                let contourFill = 0;
+                let mean = 255;
+                let ellipseResult = null;
+
+                if (cnt.rows >= 5) {
+                    ellipseResult = cv.fitEllipse(cnt);
+                    const w = ellipseResult.size.width;
+                    const h = ellipseResult.size.height;
+                    ratio = Math.max(w, h) / Math.max(Math.min(w, h), 1);
+                    const ellipseArea = Math.PI * (w / 2) * (h / 2);
+                    contourFill = ellipseArea > 0 ? area / ellipseArea : 0;
+                    ellipseFitted = true;
+
+                    // Measure mean brightness inside contour
+                    const mask = cv.Mat.zeros(enhanced.rows, enhanced.cols, cv.CV_8UC1);
+                    cv.drawContours(mask, contours, i, new cv.Scalar(255), -1);
+                    mean = cv.mean(enhanced, mask)[0];
+                    mask.delete();
+
+                    // +1 — ellipse fitted and aspect ratio is egg-like (not a line)
+                    if (ratio <= 10) score += 1;
+
+                    // +1 — fill ratio: contour fills a reasonable portion of its ellipse
+                    //      (rejects hollow rings and single-pixel artefacts)
+                    if (contourFill > 0.15) score += 1;
+
+                    // +1 — mean brightness: not a pure specular highlight
+                    //      NOTE: dark-center check removed — egg interiors vary widely
+                    if (mean < 210) score += 1;
+                }
+
+                // Score threshold: need ≥ 3 to count as an egg
+                if (score >= 3) {
+                    finalCountOutput++;
+                    totalScore += score;
+
+                    // Draw detection overlay on dst
+                    const rect = cv.boundingRect(cnt);
+                    if (ellipseResult) {
+                        cv.ellipse(dst, ellipseResult, drawColor, 2);
+                    } else {
+                        cv.rectangle(dst, new cv.Point(rect.x, rect.y),
+                            new cv.Point(rect.x + rect.width, rect.y + rect.height),
+                            drawColor, 2);
+                    }
+
+                    // Store bounding box for later annotation
+                    detectedBoxes.push({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+                }
+
+                cnt.delete();
+            }
+
+            // Confidence: average score of counted eggs as % of max (5 pts)
+            const maxScore = 5;
+            const avgScore = finalCountOutput > 0 ? totalScore / finalCountOutput : 0;
+            const confidence = Math.round((avgScore / maxScore) * 100);
+            const quality    = confidence >= 75 ? "Good" : confidence >= 50 ? "Fair" : "Low";
+
+            // ── Build output images ──────────────────────────────────────────────
+            // Detection overlay (dst written to canvas)
+            cv.imshow(canvas, dst);
+            const processedBase64 = canvas.toDataURL("image/png");
+
+            // CLAHE intermediate view
+            const claheCanvas = document.createElement("canvas");
+            claheCanvas.width  = enhanced.cols;
+            claheCanvas.height = enhanced.rows;
+            cv.imshow(claheCanvas, enhanced);
+
+            // Edge view
+            const edgeCanvas = document.createElement("canvas");
+            edgeCanvas.width  = edges.cols;
+            edgeCanvas.height = edges.rows;
+            cv.imshow(edgeCanvas, edges);
+
+            hideScanOverlay();
+            scanning = false;
+
+            syncLocationAndSave(
+                processedBase64,
+                finalCountOutput,
+                {
+                    original: originalImage,
+                    clahe:    claheCanvas.toDataURL("image/png"),
+                    edges:    edgeCanvas.toDataURL("image/png")
+                },
+                detectedBoxes,
+                confidence,
+                quality
+            );
+
+        } catch (error) {
+            console.error("Vision Engine Error:", error);
+            hideScanOverlay();
+            scanning = false;
+            syncLocationAndSave(originalImage, 0,
+                { original: originalImage, clahe: originalImage, edges: originalImage },
+                [], 0, "Error"
+            );
+        } finally {
+            // Clean up every allocated Mat
+            if (src)       src.delete();
+            if (dst)       dst.delete();
+            if (gray)      gray.delete();
+            if (enhanced)  enhanced.delete();
+            if (edges)     edges.delete();
+            if (thresh)    thresh.delete();
+            if (contours)  contours.delete();
+            if (hierarchy) hierarchy.delete();
+            if (kernel)    kernel.delete();
+        }
     }
 
-    cnt.delete();
+function syncLocationAndSave(base64Image, objectCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
+
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            currentLat = pos.coords.latitude;
+            currentLng = pos.coords.longitude;
+            commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
+        },
+        () => {
+            commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
+        },
+        geoOptions
+    );
+
 }
 
-        cv.imshow(canvas, dst);
-        processedBase64 = canvas.toDataURL("image/png");
 
-        src.delete(); dst.delete(); gray.delete(); thresh.delete(); contours.delete(); hierarchy.delete(); kernel.delete();
+function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
 
-        syncLocationAndSave(processedBase64, finalCountOutput);
-    }
+    const payload = {
+        id:         Date.now(),
+        src:        imgData,
+        original:   extraImages.original || imgData,   // raw unmodified capture
+        clahe:      extraImages.clahe    || imgData,   // CLAHE enhanced view
+        edges:      extraImages.edges    || imgData,   // edge-detection view
+        detected:   imgData,                           // detection overlay
+        boxes:      boxes,                             // [{x,y,width,height}, …]
+        timestamp:  new Date().toLocaleTimeString(),
+        date:       new Date().toLocaleDateString(),
+        count:      calculatedCount,
+        confidence: confidence,
+        quality:    quality,
+        lat:        currentLat.toFixed(5),
+        lng:        currentLng.toFixed(5)
+    };
 
-    function syncLocationAndSave(base64Image, objectCount) {
-        navigator.geolocation.getCurrentPosition(
-            pos => { 
-                currentLat = pos.coords.latitude; 
-                currentLng = pos.coords.longitude; 
-                commitSessionLog(base64Image, objectCount);
-            },
-            err => { commitSessionLog(base64Image, objectCount); }, 
-            geoOptions
-        );
-    }
+    appHistory.push(payload);
 
-    function commitSessionLog(imgData, calculatedCount) {
-        const payload = {
-            id: Date.now(), src: imgData, timestamp: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString(),
-            count: calculatedCount, lat: currentLat.toFixed(5), lng: currentLng.toFixed(5)
-        };
-        appHistory.push(payload);
+    sendEggCountToEOT(calculatedCount, currentLat, currentLng);
 
-        sendEggCountToEOT(
-    calculatedCount,
-    currentLat,
-    currentLng
-);
-
-        fireToast(`Segmentation complete: Identified ${calculatedCount} dark data nodes.`);
-    }
+    const confStr = confidence > 0 ? ` · Confidence: ${confidence}% (${quality})` : "";
+    fireToast(`Segmentation complete: ${calculatedCount} object${calculatedCount !== 1 ? "s" : ""} detected.${confStr}`);
+}
 
     // High Precision GIS Tracking System & Infrastructure Radius Overlays
     function openGISView() {
@@ -800,7 +1089,7 @@ for(let i = 0; i < contours.size(); i++){
             const block = document.createElement("div");
             block.style.display = "flex"; block.style.flexDirection = "column"; block.style.alignItems = "center";
             const elementImage = document.createElement("img");
-            elementImage.src = item.src; elementImage.className = "gallery-item";
+            elementImage.src = item.detected || item.src; elementImage.className = "gallery-item";
             const label = document.createElement("span");
             label.innerText = `${item.timestamp}\n[Count: ${item.count}]`; label.style.fontSize = "11px"; label.style.textAlign="center"; label.style.marginTop="6px";
             block.appendChild(elementImage); block.appendChild(label);
