@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALAB</title>
+    <title>Advanced Vector Mapping & Computer Vision Field Platform</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -647,10 +647,10 @@
     const scanOverlay   = document.getElementById("scan-overlay");
     const scanStatusTxt = document.getElementById("scan-status");
 
-    const EOT_API_URL = "https://emergency-operations-team.onrender.com//api/submit";
+    const EOT_API_URL = "https://emergency-operations-team.onrender.com/api/submit";
     const EOT_SECRET  = "eot2026et67567";
     const OMTI_API_URL = "https://rectal-affirmably-suanne.ngrok-free.dev/predict";
-    const OMTI_PROXY   = "https://corsproxy.io/?" + encodeURIComponent(OMTI_API_URL);
+    const OMTI_PROXY   = OMTI_API_URL;  // hosted on https — go direct, no proxy needed
 
     const TRAP_ID   = getTrapID();
     const TRAP_TYPE = "mobile_camera";
