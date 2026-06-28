@@ -539,7 +539,7 @@ All core modules are active and operational. This release is approved for field 
 
     <!-- Trap-not-verified error overlay -->
     <div id="trap-error-overlay">
-        <div class="trap-error-icon">🚫</div>
+        <div class="trap-error-icon"></div>
         <p class="trap-error-title">Trap Not Recognized</p>
         <p class="trap-error-sub">No valid ovitrap cross-marker (+) was detected in the frame. Please aim the camera at the verified trap surface and try again.</p>
         <button class="trap-error-retry" onclick="dismissTrapError()">Try Again</button>
@@ -562,13 +562,13 @@ All core modules are active and operational. This release is approved for field 
 
     <div id="bioacoustic-panel" class="full-overlay">
         <button class="panel-close" onclick="closePanel('bioacoustic-panel'); stopMicRecording();">← Return to Field</button>
-        <div class="experimental-badge">OMTI ResNet-18 · Live Inference</div>
+        <div class="experimental-badge">OMTI · Live Inference</div>
         <h2>BioAcoustic Analysis</h2>
 
         <!-- Upload -->
         <p class="bio-section-title">Upload Audio File</p>
         <label class="bio-upload-zone" for="bio-file-input">
-            <div class="bio-up-icon">🎵</div>
+            <div class="bio-up-icon"></div>
             <p>Tap to upload WAV or MP3</p>
             <small>Wingbeat recording from field trap</small>
         </label>
@@ -586,7 +586,7 @@ All core modules are active and operational. This release is approved for field 
         <!-- Status -->
         <div id="bio-status" class="bio-status-bar">
             <div class="bio-spinner-sm"></div>
-            <span id="bio-status-text">Sending to OMTI model…</span>
+            <span id="bio-status-text">Sending to OMTI</span>
         </div>
 
         <!-- Results -->
