@@ -191,45 +191,39 @@
 
         /* ── Terms & Conditions Modal ───────────────────────────────────── */
         #tnc-modal {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.55);
-            z-index: 10000;
-            display: flex; justify-content: center; align-items: flex-end;
-            padding: 0;
-        }
-        #tnc-modal.hidden { display: none; }
-        .tnc-sheet {
-            background: #ffffff;
-            width: 100%; max-width: 500px;
-            border-radius: 24px 24px 0 0;
-            padding: 28px 24px 36px;
-            max-height: 90vh;
-            display: flex; flex-direction: column;
-            gap: 0;
-            animation: sheetUp 0.35s cubic-bezier(0.4,0,0.2,1);
-        }
-        @keyframes sheetUp {
-            from { transform: translateY(60px); opacity: 0; }
-            to   { transform: translateY(0);    opacity: 1; }
-        }
-        .tnc-handle {
-            width: 40px; height: 4px; background: #dee2e6;
-            border-radius: 2px; margin: 0 auto 20px;
-        }
-        .tnc-sheet h2 {
-            font-size: 18px; font-weight: 700; color: #212529;
-            margin-bottom: 4px;
-        }
-        .tnc-sheet .tnc-sub {
-            font-size: 12px; color: #868e96; margin-bottom: 16px;
-            letter-spacing: 0.2px;
-        }
-        .tnc-body {
-            overflow-y: auto; flex: 1;
-            max-height: 38vh;
-            border: 1px solid #e0e0e0; border-radius: 12px;
-            padding: 16px; font-size: 13px; line-height: 1.65;
-            color: #495057; margin-bottom: 20px;
+    position: fixed;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    z-index:10000;
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+}
+
+
+.tnc-sheet {
+    background:#fff;
+    width:100%;
+    max-width:500px;
+    border-radius:24px 24px 0 0;
+    padding:28px 24px 36px;
+    max-height:90vh;
+    display:flex;
+    flex-direction:column;
+}
+
+
+.tnc-body {
+    overflow-y:auto;
+    flex:1;
+    max-height:60vh;
+    min-height:200px;
+    border:1px solid #e0e0e0;
+    border-radius:12px;
+    padding:16px;
+}
         }
         .tnc-body h3 {
             font-size: 12px; font-weight: 700; color: #212529;
@@ -539,7 +533,7 @@ All core modules are active and operational. This release is approved for field 
 
     <!-- Trap-not-verified error overlay -->
     <div id="trap-error-overlay">
-        <div class="trap-error-icon"></div>
+        <div class="trap-error-icon">🚫</div>
         <p class="trap-error-title">Trap Not Recognized</p>
         <p class="trap-error-sub">No valid ovitrap cross-marker (+) was detected in the frame. Please aim the camera at the verified trap surface and try again.</p>
         <button class="trap-error-retry" onclick="dismissTrapError()">Try Again</button>
@@ -586,7 +580,7 @@ All core modules are active and operational. This release is approved for field 
         <!-- Status -->
         <div id="bio-status" class="bio-status-bar">
             <div class="bio-spinner-sm"></div>
-            <span id="bio-status-text">Sending to OMTI</span>
+            <span id="bio-status-text">Sending to OMTI model…</span>
         </div>
 
         <!-- Results -->
