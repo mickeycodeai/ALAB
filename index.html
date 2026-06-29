@@ -742,36 +742,55 @@
         }
     }
 
-    // ── Reverse Geocoding (Get Barangay from GPS) ─────────────────────────────
+    // ── Reverse Geocoding (Get Exact Barangay from GPS) ───────────────────────
     async function fetchBarangay(lat, lng) {
+        // 1. Try OpenStreetMap Nominatim (Highly accurate for Philippine Barangays)
         try {
-            // Using BigDataCloud free client-side reverse geocoding API
+            const osmUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`;
+            const osmRes = await fetch(osmUrl);
+            if (osmRes.ok) {
+                const osmData = await osmRes.json();
+                if (osmData && osmData.address) {
+                    const addr = osmData.address;
+                    // OSM uses different keys for barangays depending on the area mapping
+                    const potentialBarangay = addr.barangay || addr.suburb || addr.village || addr.city_district || addr.neighbourhood;
+                    
+                    if (potentialBarangay) {
+                        // Ensure it's not just the city/municipality name repeated
+                        const cityOrTown = (addr.city || addr.town || addr.municipality || "").toLowerCase();
+                        if (potentialBarangay.toLowerCase() !== cityOrTown) {
+                            console.log("Pinpoint Barangay found via OSM:", potentialBarangay);
+                            return potentialBarangay;
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn("OSM Nominatim failed or blocked, falling back to BigDataCloud.", e);
+        }
+
+        // 2. Fallback to BigDataCloud (If OSM fails or is offline)
+        try {
             const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
             const response = await fetch(url);
             if (!response.ok) return "Unknown";
             
             const data = await response.json();
-            
             if (data && data.localityInfo && data.localityInfo.administrative) {
                 const admins = data.localityInfo.administrative;
-                // Sort by adminLevel descending (higher number = more specific, like a barangay)
                 admins.sort((a, b) => b.adminLevel - a.adminLevel);
                 
-                // Look for Barangay (usually adminLevel 6+ or name contains "Barangay")
                 for (const area of admins) {
-                    if (area.adminLevel >= 6 || (area.name && area.name.toLowerCase().includes('barangay'))) {
+                    if (area.adminLevel >= 7 || (area.name && area.name.toLowerCase().includes('barangay'))) {
                         return area.name;
                     }
                 }
-                
-                // Fallback to the most specific local area available (e.g., district or city)
                 return admins[0].name || data.locality || "Unknown";
             }
-            
             return data.locality || "Unknown";
         } catch (error) {
             console.error("Geocoding failed:", error);
-            return "Unknown"; // Fallback if offline or API fails
+            return "Unknown";
         }
     }
 
