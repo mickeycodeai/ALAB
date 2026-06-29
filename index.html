@@ -1024,7 +1024,7 @@
         canvas.height = video.videoHeight || 480;
         canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        scanStatusTxt.innerText = "Sending to YOLO detector…";
+        scanStatusTxt.innerText = "Sending to pipeline…";
         await processYOLODetection(canvas);
     }
 
@@ -1058,7 +1058,7 @@
         const originalImage = sourceCanvas.toDataURL("image/png");
 
         try {
-            scanStatusTxt.innerText = "Running YOLO egg detector…";
+            scanStatusTxt.innerText = "Running…";
             const result = await submitImageToOMTI(sourceCanvas, filename);
 
             if (result) {
@@ -1067,17 +1067,17 @@
                 syncLocationAndSave(
                     originalImage, result.count,
                     { original: originalImage, clahe: originalImage, edges: originalImage },
-                    result.boxes, result.confidence, "YOLO API"
+                    result.boxes, result.confidence, "API"
                 );
                 return;
             }
 
             hideScanOverlay();
             scanning = false;
-            fireToast("YOLO API unreachable. Check server connection and try again.");
+            fireToast("unreachable. Check server connection and try again.");
 
         } catch (err) {
-            console.error("YOLO pipeline error:", err);
+            console.error("pipeline error:", err);
             hideScanOverlay();
             scanning = false;
             fireToast("Detection error: " + err.message);
