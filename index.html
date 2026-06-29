@@ -627,6 +627,7 @@
                         <tr>
                             <th>Timestamp</th>
                             <th>Lat / Long Coordinate</th>
+                            <th>Barangay</th>
                             <th>Object Count</th>
                         </tr>
                     </thead>
@@ -741,6 +742,39 @@
         }
     }
 
+    // ── Reverse Geocoding (Get Barangay from GPS) ─────────────────────────────
+    async function fetchBarangay(lat, lng) {
+        try {
+            // Using BigDataCloud free client-side reverse geocoding API
+            const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
+            const response = await fetch(url);
+            if (!response.ok) return "Unknown";
+            
+            const data = await response.json();
+            
+            if (data && data.localityInfo && data.localityInfo.administrative) {
+                const admins = data.localityInfo.administrative;
+                // Sort by adminLevel descending (higher number = more specific, like a barangay)
+                admins.sort((a, b) => b.adminLevel - a.adminLevel);
+                
+                // Look for Barangay (usually adminLevel 6+ or name contains "Barangay")
+                for (const area of admins) {
+                    if (area.adminLevel >= 6 || (area.name && area.name.toLowerCase().includes('barangay'))) {
+                        return area.name;
+                    }
+                }
+                
+                // Fallback to the most specific local area available (e.g., district or city)
+                return admins[0].name || data.locality || "Unknown";
+            }
+            
+            return data.locality || "Unknown";
+        } catch (error) {
+            console.error("Geocoding failed:", error);
+            return "Unknown"; // Fallback if offline or API fails
+        }
+    }
+
     async function generateEOTHash(payload){
         const text = `${payload.trap_id}${payload.trap_type}${payload.gps}${payload.egg_count}`;
         const encoder = new TextEncoder();
@@ -753,11 +787,11 @@
             .map(b=>b.toString(16).padStart(2,"0")).join("");
     }
 
-    async function sendEggCountToEOT(count, lat, lng){
+    async function sendEggCountToEOT(count, lat, lng, barangayName = "Unknown"){
         const gps = `${lat},${lng}`;
         const payload = {
             trap_id: TRAP_ID, trap_type: TRAP_TYPE,
-            gps: gps, egg_count: count, barangay: "Unknown"
+            gps: gps, egg_count: count, barangay: barangayName
         };
         payload.sha256 = await generateEOTHash(payload);
         try {
@@ -768,6 +802,7 @@
             });
             const result = await response.json();
             console.log("EOT RESPONSE:", result);
+            console.log("Sent to server with Barangay:", barangayName);
         } catch(error) {
             console.error("EOT Upload Failed", error);
         }
@@ -1084,21 +1119,23 @@
         }
     }
 
-    function syncLocationAndSave(base64Image, objectCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
+    async function syncLocationAndSave(base64Image, objectCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
         navigator.geolocation.getCurrentPosition(
-            pos => {
+            async (pos) => {
                 currentLat = pos.coords.latitude;
                 currentLng = pos.coords.longitude;
-                commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
+                const currentBarangay = await fetchBarangay(currentLat, currentLng);
+                commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality, currentBarangay);
             },
-            () => {
-                commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
+            async () => {
+                const currentBarangay = await fetchBarangay(currentLat, currentLng);
+                commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality, currentBarangay);
             },
             geoOptions
         );
     }
 
-    function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
+    function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = [], confidence = 0, quality = "", barangayName = "Unknown") {
         const payload = {
             id: Date.now(), src: imgData,
             original: extraImages.original || imgData,
@@ -1109,10 +1146,11 @@
             date: new Date().toLocaleDateString(),
             count: calculatedCount, confidence: confidence,
             quality: quality,
-            lat: currentLat.toFixed(5), lng: currentLng.toFixed(5)
+            lat: currentLat.toFixed(5), lng: currentLng.toFixed(5),
+            barangay: barangayName
         };
         appHistory.push(payload);
-        sendEggCountToEOT(calculatedCount, currentLat, currentLng);
+        sendEggCountToEOT(calculatedCount, currentLat, currentLng, barangayName);
 
         const confStr = confidence > 0 ? ` · Confidence: ${confidence}% (${quality})` : "";
         fireToast(`Segmentation complete: ${calculatedCount} object${calculatedCount !== 1 ? "s" : ""} detected.${confStr}`);
@@ -1188,10 +1226,13 @@
     function showReportPanel() {
         const bodyElement = document.getElementById("report-table-body");
         bodyElement.innerHTML = "";
-        if(appHistory.length === 0) { bodyElement.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#868e96;'>No active records registered.</td></tr>"; }
+        if(appHistory.length === 0) { bodyElement.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#868e96;'>No active records registered.</td></tr>"; }
         appHistory.forEach(dataNode => {
             const row = document.createElement("tr");
-            row.innerHTML = `<td>${dataNode.date} ${dataNode.timestamp}</td><td>Lat: ${dataNode.lat}<br>Lng: ${dataNode.lng}</td><td><span style='background:#f1f3f5; padding:4px 10px; border-radius:12px; font-weight:700;'>${dataNode.count}</span></td>`;
+            row.innerHTML = `<td>${dataNode.date} ${dataNode.timestamp}</td>
+                             <td>Lat: ${dataNode.lat}<br>Lng: ${dataNode.lng}</td>
+                             <td>${dataNode.barangay || 'Unknown'}</td>
+                             <td><span style='background:#f1f3f5; padding:4px 10px; border-radius:12px; font-weight:700;'>${dataNode.count}</span></td>`;
             bodyElement.appendChild(row);
         });
         openPanel('report-panel');
@@ -1199,8 +1240,8 @@
 
     function downloadCSVReport() {
         if (appHistory.length === 0) { fireToast("No logs found to export."); return; }
-        let structuralContent = "data:text/csv;charset=utf-8,Date,Timestamp,Latitude,Longitude,SegmentedCount\n";
-        appHistory.forEach(node => { structuralContent += `${node.date},${node.timestamp},${node.lat},${node.lng},${node.count}\n`; });
+        let structuralContent = "data:text/csv;charset=utf-8,Date,Timestamp,Latitude,Longitude,Barangay,SegmentedCount\n";
+        appHistory.forEach(node => { structuralContent += `${node.date},${node.timestamp},${node.lat},${node.lng},${node.barangay || 'Unknown'},${node.count}\n`; });
         const finalURI = encodeURI(structuralContent);
         const auxiliaryDownloader = document.createElement("a");
         auxiliaryDownloader.setAttribute("href", finalURI);
