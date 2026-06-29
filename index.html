@@ -2,13 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Advanced Vector Mapping & Computer Vision Field Platform</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- OpenCV removed — image detection now handled server-side via YOLO /predict/image API -->
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
@@ -17,7 +15,6 @@
         .camera-container { width: 100%; max-width: 500px; height: 100vh; position: relative; background: #fff; overflow: hidden; border: 1px solid #e0e0e0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Crisp, Flat, Premium White UI Elements */
         button { border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); outline: none; }
         button:active { transform: scale(0.95); }
         
@@ -25,40 +22,34 @@
         .control-btn svg { width: 20px; height: 20px; fill: #212529; }
         .small-btn { padding: 12px 24px; border-radius: 24px; background: #ffffff; border: 1px solid #e0e0e0; color: #212529; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); letter-spacing: 0.5px; }
         
-        /* Shutter button style adapts when compiling vs ready */
         .capture-container { display: flex; justify-content: center; align-items: center; width: 84px; height: 84px; background: transparent; }
         .capture { width: 72px; height: 72px; border-radius: 50%; background: #ffffff; border: 6px solid #ff922b; box-shadow: 0 6px 20px rgba(255, 146, 43, 0.2); transition: border-color 0.4s ease; }
         .capture.ready { border-color: #212529; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
         
-        .top-bar { position: absolute; top: 24px; width: 100%; display: flex; justify-content: space-between; padding: 0 24px; z-index: 10; }
+        .top-bar { position: absolute; top: 56px; width: 100%; display: flex; justify-content: space-between; padding: 0 24px; z-index: 10; }
         .bottom-panel { position: absolute; bottom: 32px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; z-index: 10; }
         .controls { display: flex; gap: 16px; }
         
         .zoom-control { position: absolute; right: 24px; bottom: 200px; z-index: 10; height: 130px; display: flex; align-items: center; }
         input[type="range"] { transform: rotate(-90deg); width: 120px; accent-color: #212529; cursor: pointer; }
 
-        /* Unified White Panel Engine */
-        .full-overlay { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: #ffffff; z-index: 30; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); padding: 40px 24px; display: flex; flex-direction: column; gap: 16px; }
+        .full-overlay { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: #ffffff; z-index: 30; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); padding: 40px 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
         .full-overlay.active { transform: translateX(100%); }
         .full-overlay h2 { font-size: 24px; font-weight: 700; color: #212529; margin-bottom: 8px; }
         .full-overlay .panel-close { padding: 14px; border: 1px solid #e0e0e0; background: #f8f9fa; border-radius: 12px; text-align: center; font-weight: 600; color: #212529; margin-bottom: 16px; }
         
-        /* Sidebar Action Buttons & Labels */
         .menu-action-btn { padding: 18px 20px; border: 1px solid #eaeaea; background: #ffffff; border-radius: 14px; text-align: left; font-weight: 600; font-size: 15px; color: #333333; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.02); position: relative; }
         .menu-action-btn:hover { background: #fdfdfd; border-color: #d0d0d0; }
         .menu-action-btn::after { content: '→'; color: #b0b0b0; font-weight: normal; }
         
-        /* Custom styled wrapper for backup file input to keep things looking professional */
         .backup-upload-btn::after { content: '↑'; color: #b0b0b0; font-weight: 600; }
 
-        /* BioAcoustic Structural Configuration Boxes */
         .experimental-badge { align-self: flex-start; padding: 6px 12px; background: #f1f3f5; color: #495057; font-size: 11px; font-weight: 700; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; border: 1px solid #dee2e6; letter-spacing: 0.5px; }
         .info-card { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 14px; padding: 20px; margin-top: 10px; }
         .info-card p { font-size: 14px; line-height: 1.6; color: #495057; margin-bottom: 12px; }
         .info-card ul { list-style-position: inside; font-size: 14px; color: #212529; }
         .info-card li { margin-bottom: 8px; font-weight: 500; }
 
-        /* Map and Subcomponents displays */
         #map-container-div { width: 100%; flex-grow: 1; border-radius: 16px; border: 1px solid #e0e0e0; overflow: hidden; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); }
         .gallery-scroll { width: 100%; display: flex; gap: 12px; overflow-x: auto; padding: 8px 4px; }
         .gallery-item { min-width: 100px; height: 135px; border-radius: 12px; background: #eee; object-fit: cover; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -67,213 +58,245 @@
         th, td { padding: 12px; border-bottom: 1px solid #eaeaea; }
         th { background: #f8f9fa; font-weight: 700; }
 
-        #splash-screen{
+        /* ── Splash Screen ─────────────────────────────────────────────── */
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .splash-content { text-align: center; padding: 24px; }
+        .splash-logo {
+            width: 120px; height: 120px;
+            object-fit: contain;
+            margin-bottom: 24px;
+            border-radius: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .splash-content h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+        }
+        .splash-content p {
+            color: #868e96;
+            font-size: 13px;
+            line-height: 1.5;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+        .loader {
+            width: 36px; height: 36px;
+            border: 3px solid #f1f3f5;
+            border-top: 3px solid #212529;
+            border-radius: 50%;
+            margin: 28px auto 12px;
+            animation: spin 0.9s linear infinite;
+        }
+        #loading-text {
+            font-size: 12px;
+            color: #adb5bd;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        #splash-screen.hide { opacity: 0; pointer-events: none; }
 
-    position:fixed;
-    inset:0;
-
-    background:#ffffff;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    z-index:9999;
-
-}
-
-
-.splash-content{
-
-    text-align:center;
-
-}
-
-
-.splash-logo{
-
-    width:140px;
-    height:140px;
-
-    object-fit:contain;
-
-    margin-bottom:25px;
-
-}
-
-
-.splash-content h1{
-
-    font-size:28px;
-    font-weight:700;
-    color:#212529;
-
-}
-
-
-.splash-content p{
-
-    color:#868e96;
-    margin-top:8px;
-
-}
-
-
-.loader{
-
-    width:45px;
-    height:45px;
-
-    border:4px solid #eee;
-    border-top:4px solid #212529;
-
-    border-radius:50%;
-
-    margin:25px auto;
-
-    animation:spin 1s linear infinite;
-
-}
-
-
-@keyframes spin{
-
-    from{
-        transform:rotate(0deg);
-    }
-
-    to{
-        transform:rotate(360deg);
-    }
-
-}
-
-
-#splash-screen.hide{
-
-    opacity:0;
-    pointer-events:none;
-
-    transition:0.5s;
-
-}
-
-/* Scan-analysis overlay — separate from app startup splash */
-#scan-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,0.88);
-    z-index: 50;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 14px;
-    backdrop-filter: blur(2px);
-}
-#scan-overlay.active { display: flex; }
-#scan-overlay .scan-spinner {
-    width: 40px; height: 40px;
-    border: 3px solid #eee;
-    border-top: 3px solid #212529;
-    border-radius: 50%;
-    animation: spin 0.9s linear infinite;
-}
-#scan-overlay p {
-    font-size: 14px; font-weight: 600; color: #212529;
-    letter-spacing: 0.3px;
-}
-#scan-overlay small {
-    font-size: 12px; color: #868e96;
-}
+        /* ── Scan overlay ──────────────────────────────────────────────── */
+        #scan-overlay {
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,0.92);
+            z-index: 50; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            gap: 14px; backdrop-filter: blur(2px);
+        }
+        #scan-overlay.active { display: flex; }
+        #scan-overlay .scan-spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #eee; border-top: 3px solid #212529;
+            border-radius: 50%; animation: spin 0.9s linear infinite;
+        }
+        #scan-overlay p { font-size: 14px; font-weight: 600; color: #212529; letter-spacing: 0.3px; }
+        #scan-overlay small { font-size: 12px; color: #868e96; }
         
         .message-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 14px 24px; background: rgba(33,33,33,0.92); color: #fff; font-size: 14px; font-weight: 500; border-radius: 30px; z-index: 100; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.2); text-align: center; max-width: 80%; }
 
-        /* ── Terms & Conditions Modal ───────────────────────────────────── */
+        /* ── Terms & Conditions Modal — FIXED & PROFESSIONAL ─────────── */
         #tnc-modal {
-    position: fixed;
-    inset:0;
-    background:rgba(0,0,0,0.55);
-    z-index:10000;
-    display:flex;
-    justify-content:center;
-    align-items:flex-end;
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
-}
-
-
-.tnc-sheet {
-    background:#fff;
-    width:100%;
-    max-width:500px;
-    border-radius:24px 24px 0 0;
-    padding:28px 24px 36px;
-    max-height:90vh;
-    display:flex;
-    flex-direction:column;
-}
-
-
-.tnc-body {
-    overflow-y:auto;
-    flex:1;
-    max-height:60vh;
-    min-height:200px;
-    border:1px solid #e0e0e0;
-    border-radius:12px;
-    padding:16px;
-}
-        }
-        .tnc-body h3 {
-            font-size: 12px; font-weight: 700; color: #212529;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            margin: 14px 0 6px;
-        }
-        .tnc-body h3:first-child { margin-top: 0; }
-        .tnc-body p  { margin-bottom: 8px; }
-        .tnc-body .dpa-badge {
-            display: inline-block;
-            background: #e7f5ff; color: #1971c2;
-            font-size: 10px; font-weight: 700;
-            padding: 3px 8px; border-radius: 4px;
-            letter-spacing: 0.4px; margin-bottom: 10px;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 15, 15, 0.65);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            overflow: hidden;
         }
 
-        /* prototype notice inside T&C */
+        .tnc-sheet {
+            background: #ffffff;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 24px 24px 0 0;
+            display: flex;
+            flex-direction: column;
+            max-height: 92vh;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.18);
+            animation: sheetSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes sheetSlideUp {
+            from { transform: translateY(100%); }
+            to   { transform: translateY(0); }
+        }
+
+        /* Fixed header */
+        .tnc-header {
+            flex-shrink: 0;
+            padding: 14px 24px 18px;
+            border-bottom: 1px solid #f1f3f5;
+            text-align: center;
+        }
+        .tnc-handle {
+            width: 40px; height: 4px;
+            background: #dee2e6;
+            border-radius: 2px;
+            margin: 0 auto 16px;
+        }
+        .tnc-header h2 {
+            font-size: 19px;
+            font-weight: 700;
+            color: #212529;
+            margin: 0 0 6px;
+            letter-spacing: -0.2px;
+        }
+        .tnc-subtitle {
+            font-size: 11px;
+            color: #868e96;
+            margin: 0;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* Scrollable body — THIS IS THE FIX FOR SCROLLING */
+        .tnc-body {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 22px 24px;
+            min-height: 0; /* Critical: allows flex child to shrink and scroll */
+        }
+        .tnc-body::-webkit-scrollbar { width: 4px; }
+        .tnc-body::-webkit-scrollbar-thumb { background: #dee2e6; border-radius: 2px; }
+
+        .tnc-section { margin-bottom: 22px; }
+        .tnc-section:last-child { margin-bottom: 0; }
+
+        .tnc-section h3 {
+            font-size: 11px;
+            font-weight: 700;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 0 0 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #f1f3f5;
+        }
+        .tnc-section p {
+            font-size: 13.5px;
+            line-height: 1.7;
+            color: #495057;
+            margin: 0 0 10px;
+        }
+        .tnc-section p:last-child { margin-bottom: 0; }
+        .tnc-section p strong { color: #212529; }
+
+        /* Prototype notice */
         .tnc-proto-box {
-            background: #fff9db; border: 1px solid #ffe066;
-            border-radius: 10px; padding: 12px 14px;
-            margin-bottom: 12px;
+            background: #fff9db;
+            border: 1px solid #ffe066;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
         }
         .tnc-proto-box strong {
-            display: block; font-size: 11px; font-weight: 700;
-            color: #e67700; text-transform: uppercase;
-            letter-spacing: 0.5px; margin-bottom: 4px;
+            display: block;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #e67700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 6px;
         }
-        .tnc-proto-box p { font-size: 12px; color: #664d03; margin: 0; }
+        .tnc-proto-box p { font-size: 12.5px; color: #664d03; margin: 0; line-height: 1.6; }
 
-        /* Accept button + countdown */
+        .dpa-badge {
+            display: inline-block;
+            background: #e7f5ff;
+            color: #1971c2;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            letter-spacing: 0.4px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        /* Fixed footer */
+        .tnc-footer {
+            flex-shrink: 0;
+            padding: 16px 24px 28px;
+            border-top: 1px solid #f1f3f5;
+            background: #ffffff;
+        }
+        .tnc-sub {
+            font-size: 12px;
+            color: #868e96;
+            text-align: center;
+            margin: 0 0 12px;
+        }
+
         #tnc-accept-btn {
-            width: 100%; padding: 16px;
+            width: 100%;
+            padding: 16px;
             border-radius: 14px;
-            font-size: 15px; font-weight: 700;
-            background: #212529; color: #ffffff;
-            border: none; cursor: not-allowed;
-            opacity: 0.4;
-            transition: opacity 0.3s, background 0.3s;
+            font-size: 15px;
+            font-weight: 700;
+            background: #e9ecef;
+            color: #868e96;
+            border: none;
+            cursor: not-allowed;
+            transition: all 0.3s;
+            letter-spacing: 0.3px;
         }
         #tnc-accept-btn.ready {
-            opacity: 1; cursor: pointer;
             background: #212529;
+            color: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(33, 37, 41, 0.25);
         }
-        #tnc-accept-btn.ready:active { transform: scale(0.97); }
+        #tnc-accept-btn.ready:active { transform: scale(0.98); }
         #tnc-countdown {
-            text-align: center; font-size: 12px; color: #868e96;
-            margin-top: 10px; min-height: 18px;
+            text-align: center;
+            font-size: 11px;
+            color: #adb5bd;
+            margin-top: 10px;
+            min-height: 16px;
+            letter-spacing: 0.3px;
         }
 
-        /* ── Prototype ribbon (persistent, top of camera view) ────────── */
+        /* ── Prototype ribbon ──────────────────────────────────────────── */
         #proto-ribbon {
             position: absolute; top: 0; left: 0; right: 0;
             background: #fff3bf;
@@ -287,16 +310,12 @@
             background: #f59f00; flex-shrink: 0;
             animation: protoPulse 1.8s ease-in-out infinite;
         }
-        @keyframes protoPulse {
-            0%,100% { opacity: 1; }
-            50%      { opacity: 0.3; }
-        }
+        @keyframes protoPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
         #proto-ribbon span {
-            font-size: 11px; font-weight: 600; color: #664d03;
-            line-height: 1.4;
+            font-size: 11px; font-weight: 600; color: #664d03; line-height: 1.4;
         }
 
-        /* ── Trap-not-verified error overlay ─────────────────────────────── */
+        /* ── Trap error overlay ────────────────────────────────────────── */
         #trap-error-overlay {
             position: absolute; inset: 0;
             background: rgba(255,255,255,0.95);
@@ -317,7 +336,7 @@
         }
         .trap-error-retry:active { transform: scale(0.96); }
 
-        /* ── BioAcoustic panel internals ──────────────────────────────────── */
+        /* ── BioAcoustic panel ─────────────────────────────────────────── */
         .bio-section-title {
             font-size: 11px; font-weight: 700; color: #868e96;
             text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px;
@@ -385,267 +404,242 @@
 </head>
 <body>
 
-    <!-- ── Terms & Conditions Modal (shown before app starts) ──────────── -->
+    <!-- ── Terms & Conditions Modal — RESTRUCTURED ─────────────────────── -->
     <div id="tnc-modal">
         <div class="tnc-sheet">
-            <div class="tnc-handle"></div>
-            <h2>ALAB Platform — Release Notice</h2>
+            <!-- Fixed Header -->
+            <div class="tnc-header">
+                <div class="tnc-handle"></div>
+                <h2>ALAB Platform — Release Notice</h2>
+                <p class="tnc-subtitle">ALAB-RN-2026-003 · Effective 28 June 2026</p>
+            </div>
 
-<p>
-Document Reference: ALAB-RN-2026-003<br>
-Effective Date: 28 June 2026<br>
-Distribution: Field Operations / Research Personnel
-</p>
-
-<p>
-This release transitions the ALAB vector surveillance platform from a client-side processing architecture to a centralized, server-side inference model. All analytical workloads are now handled by dedicated backend services, resulting in improved detection consistency, reduced device-side resource consumption, and a more auditable processing pipeline across all active modules.
-</p>
-
-<h3>Visual Specimen Analysis Module</h3>
-<p>
-The visual detection subsystem has been re-engineered to offload all image inference to a server-hosted detection service. Upon capture, the system encodes the current frame and transmits it to the designated inference endpoint for processing. Results are returned as structured detection records containing specimen count, spatial localization data, and per-detection confidence ratings. Mean confidence across the detection set is computed and surfaced to the operator following each scan cycle.
-</p>
-<p>
-This revision eliminates the previous dependency on a third-party cloud workflow provider and removes all browser-resident computer vision libraries from the client bundle. Application initialization time is reduced, and detection behavior is now governed exclusively by the deployed server-side model rather than heuristic client-side logic.
-</p>
-
-<h3>Acoustic Species Identification Module</h3>
-<p>
-The audio-based species classification module continues to operate via the centralized inference service, now routed through a dedicated acoustic analysis endpoint separate from the visual pipeline. This separation improves fault isolation between modules and allows each subsystem to be maintained or updated independently without service interruption.
-</p>
-<p>
-Live microphone recordings and uploaded audio files are both processed through the same classification pathway. The module produces a species and sex determination alongside a confidence rating and a full probability distribution across all supported vector categories. The classification decision is derived directly from the model output, with no supplementary rule-based adjustment applied.
-</p>
-
-<h3>System Architecture and Operational Integrity</h3>
-<p>
-Visual and acoustic inference services are now decoupled at the endpoint level, each operating as an independent backend process. Surveillance data relay to the operations server — including specimen counts, session timestamps, and GPS coordinates — remains active and unmodified, with payload authentication unchanged from the prior release.
-</p>
-<p>
-All ancillary platform modules have been verified operational under the updated architecture, including geospatial mapping, field position acquisition, session log export, manual image submission, and device hardware integration. No functional changes have been made to these components in this release.
-</p>
-
-<h3>Platform Status</h3>
-<p>
-All core modules are active and operational. This release is approved for field deployment. Operators encountering connectivity issues with the inference service should verify backend availability before initiating a scan session.
-</p>
-            <p class="tnc-sub">Please read and accept the terms below to proceed.</p>
-             
+            <!-- Scrollable Body — ALL CONTENT NOW LIVES HERE -->
             <div class="tnc-body">
 
-                <!-- Prototype notice -->
-                <div class="tnc-proto-box">
-                    <strong>Prototype Software — Not for Clinical Use</strong>
-                    <p>This application is an <em>early-stage research prototype</em>. Detection accuracy may vary due to hardware limitations including camera resolution, lens quality, focal distance, lighting conditions, and device processing speed. Results should not be used as a sole basis for public health decisions.</p>
+                <div class="tnc-section">
+                    <div class="tnc-proto-box">
+                        <strong>Prototype Software — Not for Clinical Use</strong>
+                        <p>This application is an <em>early-stage research prototype</em>. Detection accuracy may vary due to hardware limitations including camera resolution, lens quality, focal distance, lighting conditions, and device processing speed. Results should not be used as a sole basis for public health decisions.</p>
+                    </div>
+
+                    <span class="dpa-badge">Republic Act No. 10173 — Data Privacy Act of 2012</span>
                 </div>
 
-                <!-- DPA alignment -->
-                <span class="dpa-badge">Republic Act No. 10173 — Data Privacy Act of 2012</span>
+                <div class="tnc-section">
+                    <h3>Platform Overview</h3>
+                    <p>This release transitions the ALAB vector surveillance platform from a client-side processing architecture to a centralized, server-side inference model. All analytical workloads are now handled by dedicated backend services, resulting in improved detection consistency, reduced device-side resource consumption, and a more auditable processing pipeline across all active modules.</p>
+                </div>
 
-                <h3>What We Collect</h3>
-                <p>This application collects <strong>GPS coordinates</strong> and <strong>mosquito egg counts</strong> solely for the purpose of dengue vector surveillance. No personal information — including your name, contact details, identity, or device identifiers — is collected or stored at any time.</p>
+                <div class="tnc-section">
+                    <h3>Visual Specimen Analysis Module</h3>
+                    <p>The visual detection subsystem has been re-engineered to offload all image inference to a server-hosted detection service. Upon capture, the system encodes the current frame and transmits it to the designated inference endpoint for processing. Results are returned as structured detection records containing specimen count, spatial localization data, and per-detection confidence ratings.</p>
+                    <p>This revision eliminates the previous dependency on a third-party cloud workflow provider and removes all browser-resident computer vision libraries from the client bundle.</p>
+                </div>
 
-                <h3>How Data Is Used</h3>
-                <p>Anonymized location and count data is transmitted to a secure research server to generate field surveillance maps. All transmitted records are non-attributable and cannot be linked back to any individual user.</p>
+                <div class="tnc-section">
+                    <h3>Acoustic Species Identification Module</h3>
+                    <p>The audio-based species classification module operates via the centralized inference service, routed through a dedicated acoustic analysis endpoint separate from the visual pipeline. Live microphone recordings and uploaded audio files are both processed through the same classification pathway.</p>
+                </div>
 
-                <h3>Data Storage & Retention</h3>
-                <p>Captured images are processed locally on your device and are never uploaded to any external server. Only aggregate numerical counts and approximate GPS coordinates are transmitted. Data is retained only for the duration of the research period.</p>
+                <div class="tnc-section">
+                    <h3>What We Collect</h3>
+                    <p>This application collects <strong>GPS coordinates</strong> and <strong>mosquito egg counts</strong> solely for the purpose of dengue vector surveillance. No personal information — including your name, contact details, identity, or device identifiers — is collected or stored at any time.</p>
+                </div>
 
-                <h3>Your Rights Under RA 10173</h3>
-                <p>As a data subject under Philippine law, you have the right to be informed, to object, and to erasure of any data linked to you. Because no personal data is collected, these rights are satisfied by design. For concerns, contact the system administrator.</p>
+                <div class="tnc-section">
+                    <h3>How Data Is Used</h3>
+                    <p>Anonymized location and count data is transmitted to a secure research server to generate field surveillance maps. All transmitted records are non-attributable and cannot be linked back to any individual user.</p>
+                </div>
 
-                <h3>Consent</h3>
-                <p>By tapping "I Understand & Accept," you confirm that you have read this notice, understand the prototype limitations of this software, and voluntarily consent to the anonymous collection of GPS and count data as described above in accordance with RA 10173.</p>
+                <div class="tnc-section">
+                    <h3>Data Storage & Retention</h3>
+                    <p>Captured images are processed on the server-side inference endpoint and are not permanently stored on your device. Only aggregate numerical counts and approximate GPS coordinates are retained. Data is kept only for the duration of the research period.</p>
+                </div>
+
+                <div class="tnc-section">
+                    <h3>Your Rights Under RA 10173</h3>
+                    <p>As a data subject under Philippine law, you have the right to be informed, to object, and to erasure of any data linked to you. Because no personal data is collected, these rights are satisfied by design.</p>
+                </div>
+
+                <div class="tnc-section">
+                    <h3>Consent</h3>
+                    <p>By tapping <strong>"I Understand & Accept"</strong>, you confirm that you have read this notice, understand the prototype limitations of this software, and voluntarily consent to the anonymous collection of GPS and count data as described above in accordance with RA 10173.</p>
+                </div>
 
             </div>
 
-            <button id="tnc-accept-btn" disabled onclick="acceptTerms()">
-                I Understand &amp; Accept
-            </button>
-            <p id="tnc-countdown">Please wait <span id="tnc-timer">5</span> seconds…</p>
+            <!-- Fixed Footer -->
+            <div class="tnc-footer">
+                <p class="tnc-sub">Please review the notice above to proceed.</p>
+                <button id="tnc-accept-btn" disabled onclick="acceptTerms()">
+                    I Understand & Accept
+                </button>
+                <p id="tnc-countdown">Please wait <span id="tnc-timer">5</span> seconds…</p>
+            </div>
         </div>
     </div>
 
+    <!-- ── Splash Screen ───────────────────────────────────────────────── -->
     <div id="splash-screen">
-
-    <div class="splash-content">
-
-        <img 
-        src="https://cdn.postimage.me/2026/06/24/download.jpg"
-        class="splash-logo">
-
-        <p>
-         Acoustic-Linked Automated Bio-surveillance for Mosquito Eggs
-        </p>
-
-        <div class="loader"></div>
-
-        <span id="loading-text">
-            Loading
-        </span>
-
-    </div>
-
-</div>
-
-<div class="camera-container">
-    <!-- Persistent prototype warning ribbon -->
-    <div id="proto-ribbon">
-        <div class="proto-dot"></div>
-        <span>PROTOTYPE — Results may vary with camera quality, lighting &amp; distance.</span>
-    </div>
-
-    <video id="camera" autoplay playsinline></video>
-    
-    <div id="toast" class="message-toast">Processing Framework</div>
-
-    <div class="top-bar">
-        <button class="control-btn" onclick="switchCamera()">↻</button>
-        <button class="control-btn" onclick="openPanel('bioacoustic-panel')">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
-            </svg>
-        </button>
-    </div>
-
-    <div class="zoom-control">
-        <input type="range" id="zoom" min="1" max="3" step="0.1" value="1">
-    </div>
-
-    <div class="bottom-panel">
-        <div class="controls">
-            <button class="small-btn" onclick="openPanel('sidebar-panel')">Menu</button>
-            <button class="small-btn" onclick="openGISView()">GIS</button>
-        </div>
-        <div class="capture-container">
-            <button id="shutter-btn" class="capture" onclick="executeComputerVisionPipeline()"></button>
+        <div class="splash-content">
+            <img src="https://cdn.postimage.me/2026/06/24/download.jpg" class="splash-logo" alt="ALAB">
+            <h1>ALAB Platform</h1>
+            <p>Acoustic-Linked Automated Bio-surveillance for Mosquito Eggs</p>
+            <div class="loader"></div>
+            <span id="loading-text">Initializing</span>
         </div>
     </div>
 
-    <canvas id="canvas" style="display:none;"></canvas>
+    <div class="camera-container">
+        <div id="proto-ribbon">
+            <div class="proto-dot"></div>
+            <span>PROTOTYPE — Results may vary with camera quality, lighting &amp; distance.</span>
+        </div>
 
-    <!-- Scan-analysis overlay (fires per capture, not on startup) -->
-    <div id="scan-overlay">
-        <div class="scan-spinner"></div>
-        <p>Analyzing sample…</p>
-        <small id="scan-status">Running detection pipeline</small>
-    </div>
-
-    <!-- Trap-not-verified error overlay -->
-    <div id="trap-error-overlay">
-        <div class="trap-error-icon">🚫</div>
-        <p class="trap-error-title">Trap Not Recognized</p>
-        <p class="trap-error-sub">No valid ovitrap cross-marker (+) was detected in the frame. Please aim the camera at the verified trap surface and try again.</p>
-        <button class="trap-error-retry" onclick="dismissTrapError()">Try Again</button>
-    </div>
-
-    <div id="sidebar-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('sidebar-panel')">← Collapse Menu</button>
-        <h2>Operations</h2>
-        <button class="menu-action-btn" onclick="closePanel('sidebar-panel'); executeComputerVisionPipeline();">EGG count</button>
-        <button class="menu-action-btn" onclick="showReportPanel()">Report</button>
-        <button class="menu-action-btn" onclick="triggerWhereAmI()">Where am I</button>
-        <button class="menu-action-btn" onclick="toggleDeviceTorch()">FlashLight</button>
-        <button class="menu-action-btn" onclick="showSnapsPanel()">Egg snap</button>
+        <video id="camera" autoplay playsinline></video>
         
-        <label class="menu-action-btn backup-upload-btn" style="cursor: pointer;">
-            Emergency Backup
-            <input type="file" id="emergency-file-input" accept="image/*" style="display: none;" onchange="handleEmergencyBackupUpload(this)">
-        </label>
-    </div>
+        <div id="toast" class="message-toast">Processing Framework</div>
 
-    <div id="bioacoustic-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('bioacoustic-panel'); stopMicRecording();">← Return to Field</button>
-        <div class="experimental-badge">OMTI · Live Inference</div>
-        <h2>BioAcoustic Analysis</h2>
-
-        <!-- Upload -->
-        <p class="bio-section-title">Upload Audio File</p>
-        <label class="bio-upload-zone" for="bio-file-input">
-            <div class="bio-up-icon"></div>
-            <p>Tap to upload WAV or MP3</p>
-            <small>Wingbeat recording from field trap</small>
-        </label>
-        <input type="file" id="bio-file-input" accept=".wav,.mp3,audio/wav,audio/mpeg"
-               style="display:none;" onchange="handleBioUpload(this)">
-
-        <!-- Live Mic -->
-        <p class="bio-section-title">Live Microphone</p>
-        <button id="bio-mic-btn" class="bio-mic-btn" onclick="toggleMicRecording()">
-            <div class="bio-mic-dot"></div>
-            <span id="bio-mic-label">Start Recording</span>
-        </button>
-        <canvas id="bio-waveform"></canvas>
-
-        <!-- Status -->
-        <div id="bio-status" class="bio-status-bar">
-            <div class="bio-spinner-sm"></div>
-            <span id="bio-status-text">Sending to OMTI model…</span>
+        <div class="top-bar">
+            <button class="control-btn" onclick="switchCamera()">↻</button>
+            <button class="control-btn" onclick="openPanel('bioacoustic-panel')">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                </svg>
+            </button>
         </div>
 
-        <!-- Results -->
-        <div id="bio-result-card" class="bio-result-card">
-            <div class="bio-result-row">
-                <span class="bio-result-label">Species</span>
-                <span class="bio-result-value" id="bio-res-species">—</span>
+        <div class="zoom-control">
+            <input type="range" id="zoom" min="1" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="bottom-panel">
+            <div class="controls">
+                <button class="small-btn" onclick="openPanel('sidebar-panel')">Menu</button>
+                <button class="small-btn" onclick="openGISView()">GIS</button>
             </div>
-            <hr class="bio-divider">
-            <div class="bio-result-row">
-                <span class="bio-result-label">Gender</span>
-                <span class="bio-result-value" id="bio-res-gender">—</span>
+            <div class="capture-container">
+                <button id="shutter-btn" class="capture" onclick="executeComputerVisionPipeline()"></button>
             </div>
-            <hr class="bio-divider">
-            <div class="bio-result-row">
-                <span class="bio-result-label">Confidence</span>
-                <span id="bio-res-conf" class="bio-conf-pill bio-conf-high">—</span>
+        </div>
+
+        <canvas id="canvas" style="display:none;"></canvas>
+
+        <div id="scan-overlay">
+            <div class="scan-spinner"></div>
+            <p>Analyzing sample…</p>
+            <small id="scan-status">Running detection pipeline</small>
+        </div>
+
+        <div id="trap-error-overlay">
+            <div class="trap-error-icon">🚫</div>
+            <p class="trap-error-title">Trap Not Recognized</p>
+            <p class="trap-error-sub">No valid ovitrap cross-marker (+) was detected in the frame. Please aim the camera at the verified trap surface and try again.</p>
+            <button class="trap-error-retry" onclick="dismissTrapError()">Try Again</button>
+        </div>
+
+        <div id="sidebar-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('sidebar-panel')">← Collapse Menu</button>
+            <h2>Operations</h2>
+            <button class="menu-action-btn" onclick="closePanel('sidebar-panel'); executeComputerVisionPipeline();">EGG count</button>
+            <button class="menu-action-btn" onclick="showReportPanel()">Report</button>
+            <button class="menu-action-btn" onclick="triggerWhereAmI()">Where am I</button>
+            <button class="menu-action-btn" onclick="toggleDeviceTorch()">FlashLight</button>
+            <button class="menu-action-btn" onclick="showSnapsPanel()">Egg snap</button>
+            
+            <label class="menu-action-btn backup-upload-btn" style="cursor: pointer;">
+                Emergency Backup
+                <input type="file" id="emergency-file-input" accept="image/*" style="display: none;" onchange="handleEmergencyBackupUpload(this)">
+            </label>
+        </div>
+
+        <div id="bioacoustic-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('bioacoustic-panel'); stopMicRecording();">← Return to Field</button>
+            <div class="experimental-badge">OMTI · Live Inference</div>
+            <h2>BioAcoustic Analysis</h2>
+
+            <p class="bio-section-title">Upload Audio File</p>
+            <label class="bio-upload-zone" for="bio-file-input">
+                <div class="bio-up-icon">🎵</div>
+                <p>Tap to upload WAV or MP3</p>
+                <small>Wingbeat recording from field trap</small>
+            </label>
+            <input type="file" id="bio-file-input" accept=".wav,.mp3,audio/wav,audio/mpeg"
+                   style="display:none;" onchange="handleBioUpload(this)">
+
+            <p class="bio-section-title">Live Microphone</p>
+            <button id="bio-mic-btn" class="bio-mic-btn" onclick="toggleMicRecording()">
+                <div class="bio-mic-dot"></div>
+                <span id="bio-mic-label">Start Recording</span>
+            </button>
+            <canvas id="bio-waveform"></canvas>
+
+            <div id="bio-status" class="bio-status-bar">
+                <div class="bio-spinner-sm"></div>
+                <span id="bio-status-text">Sending to OMTI model…</span>
             </div>
-            <hr class="bio-divider">
 
-            <!-- Probability breakdown chart -->
-            <p class="bio-section-title" style="margin-top:4px;">Class Probability Breakdown</p>
-            <div class="bio-chart-wrap" id="bio-chart"></div>
+            <div id="bio-result-card" class="bio-result-card">
+                <div class="bio-result-row">
+                    <span class="bio-result-label">Species</span>
+                    <span class="bio-result-value" id="bio-res-species">—</span>
+                </div>
+                <hr class="bio-divider">
+                <div class="bio-result-row">
+                    <span class="bio-result-label">Gender</span>
+                    <span class="bio-result-value" id="bio-res-gender">—</span>
+                </div>
+                <hr class="bio-divider">
+                <div class="bio-result-row">
+                    <span class="bio-result-label">Confidence</span>
+                    <span id="bio-res-conf" class="bio-conf-pill bio-conf-high">—</span>
+                </div>
+                <hr class="bio-divider">
+
+                <p class="bio-section-title" style="margin-top:4px;">Class Probability Breakdown</p>
+                <div class="bio-chart-wrap" id="bio-chart"></div>
+            </div>
         </div>
-    </div>
 
-    <div id="gis-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('gis-panel')">← Close Map View</button>
-        <h2>GIS Environment Mapping</h2>
-        <div id="map-container-div"></div>
-    </div>
-
-    <div id="snaps-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('snaps-panel')">← Back to Menu</button>
-        <h2>Captured Field Snaps</h2>
-        <p style="font-size:14px; color:#6c757d; margin-bottom:12px;">Active localized computer-vision processed storage:</p>
-        <div id="snaps-gallery-scroll" class="gallery-scroll"></div>
-    </div>
-
-    <div id="report-panel" class="full-overlay">
-        <button class="panel-close" onclick="closePanel('report-panel')">← Back to Menu</button>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h2>GIS Vector Reports</h2>
-            <button class="small-btn" style="padding: 6px 14px; font-size:12px;" onclick="downloadCSVReport()">Export CSV</button>
+        <div id="gis-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('gis-panel')">← Close Map View</button>
+            <h2>GIS Environment Mapping</h2>
+            <div id="map-container-div"></div>
         </div>
-        <div class="report-table-wrapper">
-            <table id="report-table">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Lat / Long Coordinate</th>
-                        <th>Object Count</th>
-                    </tr>
-                </thead>
-                <tbody id="report-table-body"></tbody>
-            </table>
-        </div>
-    </div>
 
-</div>
+        <div id="snaps-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('snaps-panel')">← Back to Menu</button>
+            <h2>Captured Field Snaps</h2>
+            <p style="font-size:14px; color:#6c757d; margin-bottom:12px;">Active localized computer-vision processed storage:</p>
+            <div id="snaps-gallery-scroll" class="gallery-scroll"></div>
+        </div>
+
+        <div id="report-panel" class="full-overlay">
+            <button class="panel-close" onclick="closePanel('report-panel')">← Back to Menu</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h2>GIS Vector Reports</h2>
+                <button class="small-btn" style="padding: 6px 14px; font-size:12px;" onclick="downloadCSVReport()">Export CSV</button>
+            </div>
+            <div class="report-table-wrapper">
+                <table id="report-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Lat / Long Coordinate</th>
+                            <th>Object Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
 
 <script>
     // ── Terms & Conditions — 5-second countdown ──────────────────────────────
     (function initTnC() {
-        const modal      = document.getElementById("tnc-modal");
         const acceptBtn  = document.getElementById("tnc-accept-btn");
         const timerSpan  = document.getElementById("tnc-timer");
         const countdownP = document.getElementById("tnc-countdown");
@@ -664,11 +658,15 @@ All core modules are active and operational. This release is approved for field 
         }, 1000);
     })();
 
+    // FIX: Actually REMOVE the modal from the DOM so it cannot block clicks
     function acceptTerms() {
         const modal = document.getElementById("tnc-modal");
-        modal.style.transition = "opacity 0.3s";
+        if (!modal) return;
+        modal.style.transition = "opacity 0.3s ease";
         modal.style.opacity = "0";
-        setTimeout(() => { modal.classList.add("hidden"); }, 320);
+        setTimeout(() => {
+            modal.remove();   // ← This is the critical fix
+        }, 320);
     }
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -682,11 +680,8 @@ All core modules are active and operational. This release is approved for field 
 
     const EOT_API_URL = "https://emergency-operations-team.onrender.com/api/submit";
     const EOT_SECRET  = "eot2026et67567";
-    const OMTI_API_URL   = "https://rectal-affirmably-suanne.ngrok-free.dev/predict";
-    const OMTI_PROXY     = OMTI_API_URL;  // retained for backward compatibility
-    // ── Dedicated API endpoints ──────────────────────────────────────────────
-    const OMTI_IMAGE_URL = "https://rectal-affirmably-suanne.ngrok-free.dev/predict/image";  // YOLO best.pt
-    const OMTI_AUDIO_URL = "https://rectal-affirmably-suanne.ngrok-free.dev/predict/audio";  // OMTI ResNet-18
+    const OMTI_IMAGE_URL = "https://rectal-affirmably-suanne.ngrok-free.dev/predict/image";
+    const OMTI_AUDIO_URL = "https://rectal-affirmably-suanne.ngrok-free.dev/predict/audio";
 
     const TRAP_ID   = getTrapID();
     const TRAP_TYPE = "mobile_camera";
@@ -700,7 +695,6 @@ All core modules are active and operational. This release is approved for field 
     let currentTorchTrack = null;
     let scanning    = false;
 
-    // BioAcoustic mic recording state
     let mediaRecorder  = null;
     let audioChunks    = [];
     let micStream      = null;
@@ -733,7 +727,6 @@ All core modules are active and operational. This release is approved for field 
         video.style.transform = `scale(${zoom.value})`
     );
 
-    // Shutter is immediately ready — no OpenCV init wait required
     shutterBtn.classList.add("ready");
 
     startCamera();
@@ -747,120 +740,45 @@ All core modules are active and operational. This release is approved for field 
             setTimeout(() => { splash.remove(); }, 600);
         }
     }
-     async function generateEOTHash(payload){
 
-    const text =
-    `${payload.trap_id}${payload.trap_type}${payload.gps}${payload.egg_count}`;
-
-    const encoder = new TextEncoder();
-
-    const keyData =
-    encoder.encode(EOT_SECRET);
-
-
-    const cryptoKey =
-    await crypto.subtle.importKey(
-        "raw",
-        keyData,
-        {
-            name:"HMAC",
-            hash:"SHA-256"
-        },
-        false,
-        ["sign"]
-    );
-
-
-    const signature =
-    await crypto.subtle.sign(
-        "HMAC",
-        cryptoKey,
-        encoder.encode(text)
-    );
-
-
-    return Array.from(
-        new Uint8Array(signature)
-    )
-    .map(b=>b.toString(16).padStart(2,"0"))
-    .join("");
-
-}
+    async function generateEOTHash(payload){
+        const text = `${payload.trap_id}${payload.trap_type}${payload.gps}${payload.egg_count}`;
+        const encoder = new TextEncoder();
+        const keyData = encoder.encode(EOT_SECRET);
+        const cryptoKey = await crypto.subtle.importKey(
+            "raw", keyData, { name:"HMAC", hash:"SHA-256" }, false, ["sign"]
+        );
+        const signature = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(text));
+        return Array.from(new Uint8Array(signature))
+            .map(b=>b.toString(16).padStart(2,"0")).join("");
+    }
 
     async function sendEggCountToEOT(count, lat, lng){
-
-    const gps =
-    `${lat},${lng}`;
-
-
-    const payload = {
-
-        trap_id: TRAP_ID,
-
-        trap_type: TRAP_TYPE,
-
-        gps: gps,
-
-        egg_count: count,
-
-        barangay: "Unknown"
-
-    };
-
-
-    payload.sha256 =
-    await generateEOTHash(payload);
-
-
-    try{
-
-        const response =
-        await fetch(
-            EOT_API_URL,
-            {
+        const gps = `${lat},${lng}`;
+        const payload = {
+            trap_id: TRAP_ID, trap_type: TRAP_TYPE,
+            gps: gps, egg_count: count, barangay: "Unknown"
+        };
+        payload.sha256 = await generateEOTHash(payload);
+        try {
+            const response = await fetch(EOT_API_URL, {
                 method:"POST",
-
-                headers:{
-                    "Content-Type":
-                    "application/json"
-                },
-
-                body:
-                JSON.stringify(payload)
-            }
-        );
-
-
-        const result =
-        await response.json();
-
-
-        console.log(
-            "EOT RESPONSE:",
-            result
-        );
-
-
-    }
-    catch(error){
-
-        console.error(
-            "EOT Upload Failed",
-            error
-        );
-
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            console.log("EOT RESPONSE:", result);
+        } catch(error) {
+            console.error("EOT Upload Failed", error);
+        }
     }
 
-}
-
-    // Camera Init Pipeline
     async function startCamera() {
         try {
             if (stream) stream.getTracks().forEach(t => t.stop());
             const constraints = { video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
             stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
-            
             const tracks = stream.getVideoTracks();
             if(tracks.length > 0) currentTorchTrack = tracks[0];
         } catch (err) {
@@ -874,26 +792,15 @@ All core modules are active and operational. This release is approved for field 
         scanning = false;
     }
 
-    // ─── YOLO IMAGE SUBMISSION  (POST /predict/image) ────────────────────────
-    // Backend expects: multipart/form-data with field "file" (UploadFile)
-    // Backend returns: { detected_objects: N, detections: [{class, confidence, box:[x1,y1,x2,y2]}] }
-    //
-    // Works with BOTH:
-    //   • Live camera capture  → canvas.toBlob() → FormData
-    //   • Emergency file upload → File object → FormData
     async function submitImageToOMTI(source, filename) {
         filename = filename || "capture.png";
-
         try {
             let blob;
-
-            // source can be a canvas element, base64 string, or File/Blob
             if (source instanceof HTMLCanvasElement) {
                 blob = await new Promise(resolve => source.toBlob(resolve, "image/png"));
             } else if (source instanceof Blob || source instanceof File) {
                 blob = source;
             } else if (typeof source === "string") {
-                // base64 data-URL
                 const b64 = source.includes(",") ? source.split(",")[1] : source;
                 const raw = atob(b64);
                 const arr = new Uint8Array(raw.length);
@@ -904,13 +811,9 @@ All core modules are active and operational. This release is approved for field 
             }
 
             const formData = new FormData();
-            formData.append("file", blob, filename);       // "file" matches FastAPI param name
+            formData.append("file", blob, filename);
 
-            const res = await fetch(OMTI_IMAGE_URL, {      // POST /predict/image
-                method: "POST",
-                body: formData                             // no Content-Type header — browser sets multipart boundary
-            });
-
+            const res = await fetch(OMTI_IMAGE_URL, { method: "POST", body: formData });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({ detail: res.statusText }));
                 throw new Error(err.detail || `YOLO API error ${res.status}`);
@@ -919,31 +822,24 @@ All core modules are active and operational. This release is approved for field 
             const data = await res.json();
             console.log("YOLO /predict/image result:", data);
 
-            // Normalise into the format the rest of the app expects
             const detections  = data.detections || [];
             const count        = data.detected_objects ?? detections.length;
             const avgConf      = detections.length > 0
                 ? Math.round(detections.reduce((s, d) => s + d.confidence, 0) / detections.length * 100)
                 : 0;
-            // Convert XYXY boxes → {x, y, width, height}
             const boxes = detections.map(d => ({
-                x:          d.box[0],
-                y:          d.box[1],
-                width:      d.box[2] - d.box[0],
-                height:     d.box[3] - d.box[1],
-                confidence: d.confidence,
-                label:      d.class
+                x: d.box[0], y: d.box[1],
+                width: d.box[2] - d.box[0], height: d.box[3] - d.box[1],
+                confidence: d.confidence, label: d.class
             }));
 
             return { count, boxes, confidence: avgConf };
-
         } catch (e) {
             console.warn("YOLO /predict/image unavailable:", e.message);
             return null;
         }
     }
 
-    // ─── BIOACOUSTIC — FILE UPLOAD ────────────────────────────────────────────
     function handleBioUpload(input) {
         if (!input.files || !input.files[0]) return;
         const file = input.files[0];
@@ -955,7 +851,6 @@ All core modules are active and operational. This release is approved for field 
         setBioStatus(true, "Encoding audio…");
         document.getElementById("bio-result-card").classList.remove("active");
 
-        // Convert blob to base64 — survives proxy forwarding unlike multipart
         const base64 = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload  = () => resolve(reader.result.split(",")[1]);
@@ -966,7 +861,7 @@ All core modules are active and operational. This release is approved for field 
         setBioStatus(true, "Sending to OMTI model…");
 
         try {
-            const res = await fetch(OMTI_AUDIO_URL, {         // ← POST /predict/audio
+            const res = await fetch(OMTI_AUDIO_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ filename, audio_b64: base64 })
@@ -1002,7 +897,6 @@ All core modules are active and operational. This release is approved for field 
         pill.textContent = conf.toFixed(1) + "%";
         pill.className   = "bio-conf-pill " + (conf >= 70 ? "bio-conf-high" : conf >= 45 ? "bio-conf-med" : "bio-conf-low");
 
-        // Build bar chart from breakdown object
         const chart = document.getElementById("bio-chart");
         chart.innerHTML = "";
         if (data.breakdown && typeof data.breakdown === "object") {
@@ -1019,18 +913,15 @@ All core modules are active and operational. This release is approved for field 
                     <span class="bio-bar-pct">${pct.toFixed(1)}%</span>`;
                 chart.appendChild(row);
             });
-            // Animate bars after paint
             requestAnimationFrame(() => {
                 chart.querySelectorAll(".bio-bar-fill").forEach(el => {
                     el.style.width = el.dataset.target + "%";
                 });
             });
         }
-
         card.classList.add("active");
     }
 
-    // ─── BIOACOUSTIC — LIVE MIC ───────────────────────────────────────────────
     async function toggleMicRecording() {
         if (mediaRecorder && mediaRecorder.state === "recording") {
             stopMicRecording();
@@ -1058,13 +949,12 @@ All core modules are active and operational. This release is approved for field 
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         mediaRecorder.onstop = () => {
             const blob = new Blob(audioChunks, { type: mimeType });
-            const ext  = mimeType.includes("wav") ? ".wav" : ".wav"; // always .wav name
+            const ext  = mimeType.includes("wav") ? ".wav" : ".wav";
             submitAudioToOMTI(blob, "live_recording" + ext);
             stopWaveform();
         };
         mediaRecorder.start();
 
-        // UI
         const btn = document.getElementById("bio-mic-btn");
         btn.classList.add("recording");
         document.getElementById("bio-mic-label").textContent = "Stop & Analyze";
@@ -1117,8 +1007,6 @@ All core modules are active and operational. This release is approved for field 
         document.getElementById("bio-waveform").classList.remove("active");
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-
     function showScanOverlay(statusText) {
         scanStatusTxt.innerText = statusText || "Running detection pipeline";
         scanOverlay.classList.add("active");
@@ -1127,15 +1015,11 @@ All core modules are active and operational. This release is approved for field 
         scanOverlay.classList.remove("active");
     }
 
-    // ─── LIVE CAMERA CAPTURE → YOLO API ──────────────────────────────────────
-    // Captures the current video frame to canvas and sends to /predict/image.
-    // Works immediately — no OpenCV init required. Shutter is always ready.
     async function executeComputerVisionPipeline() {
         if (scanning) return;
         scanning = true;
         showScanOverlay("Capturing frame…");
 
-        // Draw live camera frame to canvas
         canvas.width  = video.videoWidth  || 640;
         canvas.height = video.videoHeight || 480;
         canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -1144,9 +1028,6 @@ All core modules are active and operational. This release is approved for field 
         await processYOLODetection(canvas);
     }
 
-    // ─── EMERGENCY BACKUP UPLOAD ──────────────────────────────────────────────
-    // Loads an image file from disk, draws it to canvas, then sends to YOLO API.
-    // Same pipeline as live capture — no OpenCV required.
     function handleEmergencyBackupUpload(inputElement) {
         if (!inputElement.files || !inputElement.files[0]) return;
         if (scanning) { fireToast("A scan is already running. Please wait."); return; }
@@ -1172,34 +1053,25 @@ All core modules are active and operational. This release is approved for field 
         reader.readAsDataURL(file);
     }
 
-
-    // ─── YOLO DETECTION PIPELINE ─────────────────────────────────────────────
-    // Single unified pipeline for both live camera capture and file upload.
-    // source = HTMLCanvasElement already drawn with the image to analyse.
     async function processYOLODetection(sourceCanvas, filename) {
         filename = filename || "capture.png";
         const originalImage = sourceCanvas.toDataURL("image/png");
 
         try {
             scanStatusTxt.innerText = "Running YOLO egg detector…";
-
             const result = await submitImageToOMTI(sourceCanvas, filename);
 
             if (result) {
                 hideScanOverlay();
                 scanning = false;
                 syncLocationAndSave(
-                    originalImage,
-                    result.count,
+                    originalImage, result.count,
                     { original: originalImage, clahe: originalImage, edges: originalImage },
-                    result.boxes,
-                    result.confidence,
-                    "YOLO API"
+                    result.boxes, result.confidence, "YOLO API"
                 );
                 return;
             }
 
-            // API unreachable — show informative message, don't crash
             hideScanOverlay();
             scanning = false;
             fireToast("YOLO API unreachable. Check server connection and try again.");
@@ -1212,51 +1084,40 @@ All core modules are active and operational. This release is approved for field 
         }
     }
 
-function syncLocationAndSave(base64Image, objectCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
+    function syncLocationAndSave(base64Image, objectCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                currentLat = pos.coords.latitude;
+                currentLng = pos.coords.longitude;
+                commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
+            },
+            () => {
+                commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
+            },
+            geoOptions
+        );
+    }
 
-    navigator.geolocation.getCurrentPosition(
-        pos => {
-            currentLat = pos.coords.latitude;
-            currentLng = pos.coords.longitude;
-            commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
-        },
-        () => {
-            commitSessionLog(base64Image, objectCount, extraImages, boxes, confidence, quality);
-        },
-        geoOptions
-    );
+    function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
+        const payload = {
+            id: Date.now(), src: imgData,
+            original: extraImages.original || imgData,
+            clahe: extraImages.clahe || imgData,
+            edges: extraImages.edges || imgData,
+            detected: imgData, boxes: boxes,
+            timestamp: new Date().toLocaleTimeString(),
+            date: new Date().toLocaleDateString(),
+            count: calculatedCount, confidence: confidence,
+            quality: quality,
+            lat: currentLat.toFixed(5), lng: currentLng.toFixed(5)
+        };
+        appHistory.push(payload);
+        sendEggCountToEOT(calculatedCount, currentLat, currentLng);
 
-}
+        const confStr = confidence > 0 ? ` · Confidence: ${confidence}% (${quality})` : "";
+        fireToast(`Segmentation complete: ${calculatedCount} object${calculatedCount !== 1 ? "s" : ""} detected.${confStr}`);
+    }
 
-
-function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = [], confidence = 0, quality = "") {
-
-    const payload = {
-        id:         Date.now(),
-        src:        imgData,
-        original:   extraImages.original || imgData,   // raw unmodified capture
-        clahe:      extraImages.clahe    || imgData,   // CLAHE enhanced view
-        edges:      extraImages.edges    || imgData,   // edge-detection view
-        detected:   imgData,                           // detection overlay
-        boxes:      boxes,                             // [{x,y,width,height}, …]
-        timestamp:  new Date().toLocaleTimeString(),
-        date:       new Date().toLocaleDateString(),
-        count:      calculatedCount,
-        confidence: confidence,
-        quality:    quality,
-        lat:        currentLat.toFixed(5),
-        lng:        currentLng.toFixed(5)
-    };
-
-    appHistory.push(payload);
-
-    sendEggCountToEOT(calculatedCount, currentLat, currentLng);
-
-    const confStr = confidence > 0 ? ` · Confidence: ${confidence}% (${quality})` : "";
-    fireToast(`Segmentation complete: ${calculatedCount} object${calculatedCount !== 1 ? "s" : ""} detected.${confStr}`);
-}
-
-    // High Precision GIS Tracking System & Infrastructure Radius Overlays
     function openGISView() {
         openPanel('gis-panel');
         setTimeout(() => {
@@ -1359,8 +1220,6 @@ function commitSessionLog(imgData, calculatedCount, extraImages = {}, boxes = []
             fireToast(`Flashlight switched ${!activeConfiguration.torch ? 'ON' : 'OFF'}`);
         } catch(e) { fireToast("Hardware flash bridge unavailable inside this browser container context."); }
     }
-
-
 </script>
 </body>
 </html>
